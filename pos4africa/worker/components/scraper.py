@@ -34,17 +34,17 @@ class Scraper:
             """
             return RawSale(
                   pos_sale_id          = str(self.sale_id),
-                  invoice_datetime     = self.get_invoice_datetime(),
-                  salesperson          = self.get_salesperson(),
-                  customer_name        = self.get_customer(),
-                  is_anonymous_customer= self.is_anonymous_customer(),
-                  invoice_total        = self.get_invoice_total(),
-                  items_sold           = self.get_items_sold(),
-                  items_returned       = self.get_items_returned(),
-                  change_due           = self.get_change_due(),
-                  comment              = self.get_comment(),
-                  items                = self.get_raw_sale_items(),
-                  payments             = self.get_invoice_payments(),
+                  invoice_datetime     = self._extract_invoice_datetime(),
+                  salesperson          = self._extract_salesperson(),
+                  customer_name        = self._extract_customer(),
+                  is_anonymous_customer= self._is_anonymous_customer(),
+                  invoice_total        = self._extract_invoice_total(),
+                  items_sold           = self._extract_items_sold(),
+                  items_returned       = self._extract_items_returned(),
+                  change_due           = self._extract_change_due(),
+                  comment              = self._extract_comment(),
+                  items                = self._extract_sale_items(),
+                  payments             = self._extract_payments(),
             )
 
       # ── Guard helpers ──────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ class Scraper:
 
             return customer.replace("Customer:", "").strip()
 
-      def _is_anonymous_customer_name(self) -> bool:
+      def _is_anonymous_customer(self) -> bool:
             # Reuses already-extracted customer name — no double parse
             try:
                   name = self._extract_customer()
@@ -172,7 +172,7 @@ class Scraper:
       def _build_payments(self, channels: list[str], amounts: list[str]) -> list[RawPayment]:
             return [
                   RawPayment(
-                        account = channels[i],
+                        channel = channels[i],
                         amount  = amounts[i] if i < len(amounts) else "0.0",
                   )
                   for i in range(len(channels))

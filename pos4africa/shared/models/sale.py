@@ -25,7 +25,7 @@ class RawSaleItem(BaseModel):
 
 
 class RawPayment(BaseModel):
-      account: str | None = None
+      channel: str | None = None
       amount:  str | None = None
 
 
@@ -53,8 +53,7 @@ class SaleItem(BaseModel):
       total: Decimal
 
 class Payment(BaseModel):
-      account_id: str | None = None
-      account: str | None = None
+      channel: str | None = None
       amount: Decimal
 
 class Sale(BaseModel):
@@ -67,7 +66,7 @@ class Sale(BaseModel):
       # persons
       salesperson: str
       customer_name: str
-      comment: str
+      comment: str | None = None
       is_anonymous_customer: bool = False
       
       # Numbers
