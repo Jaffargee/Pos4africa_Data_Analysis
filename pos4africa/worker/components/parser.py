@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+from dateutil import parser as dateutil_parser
 
 from pos4africa.shared.models.sale import RawSale, RawPayment, RawSaleItem, Sale, Payment, SaleItem
 
