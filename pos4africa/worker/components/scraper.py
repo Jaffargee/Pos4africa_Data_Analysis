@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from pos4africa.shared.models.sale import RawSale, RawSaleItem, RawPayment
-from pos4africa.shared.errors.scraper import ScraperError, ElementNotFoundError, EmptyValueError
-from pos4africa.shared.errors.codes import ErrorCodes
+from pos4africa.shared.exceptions.scraper import ScraperError, ElementNotFoundError, EmptyValueError
+from pos4africa.shared.exceptions.codes import ErrorCodes
 
 
 class Scraper:

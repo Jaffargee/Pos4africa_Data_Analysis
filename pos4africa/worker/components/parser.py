@@ -26,4 +26,17 @@ class Parser:
             cleaned = re.sub(r"\s+", " ", value).strip()
             return cleaned or None
 
+      def _parse_decimal(self, value: str | None, field: str, default: Decimal | None = None):
+            if not value:
+                  if default is not None:
+                        return default
+                  raise ValueError(f"Missing decimal field '{field}'")
+            
+            cleaned = re.sub(r"[₦, \s]", "", value)
+
+            try:
+                  return Decimal(cleaned)
+            except InvalidOperation:
+                  raise ValueError(f"Cannot parse '{value}' as decimal for '{field}'")
+
       
