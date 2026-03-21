@@ -1,15 +1,5 @@
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-POS_BASE = os.getenv('POS_BASE')
-POS_USERNAME = os.getenv('POS_USERNAME')
-POS_PASSWORD = os.getenv('POS_USERNAME')
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 class Settings(BaseSettings):
       
@@ -20,9 +10,8 @@ class Settings(BaseSettings):
       )
 
       # ── POS target ────────────────────────────────────────────────────────────
-      pos_base_url: str = POS_BASE
-      pos_username: str = POS_USERNAME
-      pos_password: str = POS_PASSWORD
+      pos_base_url: str
+      pos_username: str
       pos_password: SecretStr
       pos_login_path: str = "/login"
       pos_sales_path: str = "/sales"
@@ -50,12 +39,12 @@ class Settings(BaseSettings):
       rabbitmq_prefetch_count: int = 100
 
       # ── Supabase ──────────────────────────────────────────────────────────────
-      supabase_url: str = SUPABASE_URL
-      supabase_service_key: SecretStr = SUPABASE_KEY
+      supabase_url: str
+      supabase_key: SecretStr
       supabase_batch_size: int = 200             # records per upsert call
       supabase_table_sales: str = "sales"
       supabase_table_customers: str = "customers"
-      supabase_table_terminals: str = "terminals"
+      supabase_table_accounts: str = "accounts"
 
       # ── Circuit breaker ───────────────────────────────────────────────────────
       cb_failure_threshold: int = 5             # failures before OPEN

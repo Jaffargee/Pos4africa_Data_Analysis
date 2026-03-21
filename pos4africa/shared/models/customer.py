@@ -3,7 +3,6 @@ from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
 
-
 class Customer(BaseModel):
       id: UUID | None = None
 
