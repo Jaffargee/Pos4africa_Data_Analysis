@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
       # ── Redis ─────────────────────────────────────────────────────────────────
       redis_url: str = "redis://localhost:6379/0"
+      redis_customers_key: str
       redis_short_term_ttl: int = 300            # 5 minutes (seconds)
       redis_long_term_refresh_interval: int = 1800  # 30 minutes
 
