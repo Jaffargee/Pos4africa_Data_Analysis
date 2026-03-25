@@ -15,9 +15,9 @@ class Scraper:
       def __init__(self, sale_id: str, html_content: str):
             if not sale_id or not html_content:
                   raise ScraperError(
-                  message="sale_id and html_content cannot be empty.",
-                  code=ErrorCodes.EMPTY_VALUE,
-                  sale_id=sale_id or "UNKNOWN"
+                        message="sale_id and html_content cannot be empty.",
+                        code=ErrorCodes.EMPTY_VALUE,
+                        sale_id=sale_id or "UNKNOWN"
                   )
             self.sale_id = sale_id
             self.soup    = BeautifulSoup(html_content, "html.parser")

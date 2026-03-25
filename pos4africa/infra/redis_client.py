@@ -17,7 +17,7 @@ async def get_redis() -> RedisClient:
             _client = await aioredis.from_url(
                   settings.redis_url,
                   encoding="utf-8",
-                  decode_responses=False,  # we handle encoding ourselves (orjson)
+                  decode_responses=True,  # we handle encoding ourselves (orjson)
             )
       return _client
 

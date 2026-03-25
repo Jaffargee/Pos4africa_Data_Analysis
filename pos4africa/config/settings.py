@@ -20,15 +20,19 @@ class Settings(BaseSettings):
 
       # ── Worker pool ───────────────────────────────────────────────────────────
       worker_count: int = Field(default=8, ge=1, le=32)
-      worker_batch_size: int = 1000              # sales records per worker batch
-
+      worker_batch_size: int = 500              # sales records per worker batch
+      max_queue_size: int = 5000
+      
+      
       # ── Rate limiting (per worker) ────────────────────────────────────────────
       rate_limit_rps: float = 3.0                # max requests/sec per node
       rate_limit_burst: int = 5                  # burst allowance
 
       # ── Redis ─────────────────────────────────────────────────────────────────
       redis_url: str = "redis://localhost:6379/0"
-      redis_customers_key: str
+      redis_customers_id: str
+      redis_jobs_dedup_key: str
+      redis_queue_key: str
       redis_short_term_ttl: int = 300            # 5 minutes (seconds)
       redis_long_term_refresh_interval: int = 1800  # 30 minutes
 

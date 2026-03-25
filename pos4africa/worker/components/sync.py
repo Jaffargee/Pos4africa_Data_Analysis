@@ -10,7 +10,7 @@ class Sync:
       _RETRY_DELAY = 1.5 # Seconds 1.5s (basic backoff)
       
       @staticmethod
-      def _selectAll(table: str) -> list[dict]:
+      def _select_all(table: str = settings.supabase_table_customers) -> list[dict[str, any]]:
             if not table:
                   raise ValueError("Table must be provided.")
             
@@ -18,7 +18,7 @@ class Sync:
 
             for attemps in range(Sync._MAX_RETRIES):
                   try:
-                        response = spb_client.table(table).select("*").execute()
+                        response = spb_client.table(table).select("id, pos_customer_id, name").execute()
                         
                         if not response or response.data is None:
                               return []
@@ -29,30 +29,17 @@ class Sync:
                         last_exc = e
                         time.sleep(Sync._RETRY_DELAY * (attemps + 1))
                   
-                  except:
-                        pass
+                  except Exception as e:
+                        raise RuntimeError(f"Supabase query failed for table '{table}': {e}") from e
             
-            return (spb_client.table(table).select('*').execute())
-
+            raise ConnectionError(f"Failed to fetch '{table}' after retries") from last_exc
+      
       @staticmethod
       def fetch_customers() -> list[Customer] | None:
-            try:
-                  # Check if there is a customer table provided to fetch the customers.
-                  if not settings.supabase_table_customers:
-                        return None
+            if not settings.supabase_table_customers:
+                  raise ValueError('supabase_table_customers is not configured.')
 
-                  # Fetch customers with supabase client, which will return customer or [] if table is empty, and error if table does'nt exists or RLS.
-                  customers = Sync._selectAll(settings.supabase_table_customers)
-                  
-                  # If customers table is an empty array [] or table does not exists.
-                  if not customers:
-                        return None
-
-                  # return customers
-                  return [Customer(**ctm) for ctm in customers.data]
+            customers = Sync._select_all()
             
-            except Exception as e:
-                  print("Fetching Customers Exception: ", e)
-                  return None
-
+            return [Customer(**row) for row in customers if row.get("name")]
                   
