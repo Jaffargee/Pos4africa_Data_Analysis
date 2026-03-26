@@ -16,7 +16,7 @@ import orjson
 from pos4africa.config.settings import settings
 from pos4africa.infra.redis_client import RedisClient
 from pos4africa.worker.components import Sync
-from .search_nomalisation import keys2list, search_customer
+from .search_nomalisation import search_customer
 
 def _normalise_name(name: str) -> str: return name.lower().strip()
 
@@ -57,17 +57,27 @@ class LongTermMemory:
       # ── Customer lookup ───────────────────────────────────────────────────────
 
       async def get_customer_id_by_name(self, name: str) -> int | None:
+            normalised_name = _normalise_name(name)
+            
+            customer_id = await self._redis.hget(self._CUSTOMER_KEY, normalised_name)
+            if customer_id:
+                  return int(customer_id)
+            
             customers = await self.get_customers()
-            ctm_name = search_customer(_normalise_name(name), keys2list(customers))
-            return await self._redis.hget(self._CUSTOMER_KEY, _normalise_name(ctm_name)) or None
+            best_match = search_customer(normalised_name, list(customers.keys()))
+            
+            if not best_match:
+                  return None
+            
+            return int(await self._redis.hget(self._CUSTOMER_KEY, best_match))
 
       async def get_customers(self) -> dict | None:
             return await self._redis.hgetall(self._CUSTOMER_KEY) or None
 
       # ── Deduplication ─────────────────────────────────────────────────────────
 
-      # async def is_duplicate(self, fingerprint: str) -> bool:
-      #       return bool(await self._redis.sismember(_DEDUP_KEY, fingerprint))
+      async def is_duplicate(self, fingerprint: str) -> bool:
+            return bool(await self._redis.sismember(settings.redis_jobs_dedup_key, fingerprint))
 
-      # async def mark_seen(self, fingerprint: str) -> None:
-      #       await self._redis.sadd(_DEDUP_KEY, fingerprint)
+      async def mark_seen(self, fingerprint: str) -> None:
+            await self._redis.sadd(settings.redis_jobs_dedup_key, fingerprint)

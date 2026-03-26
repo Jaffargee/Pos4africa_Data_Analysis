@@ -19,7 +19,7 @@ class JobProducer:
                         pipe.setnx(f"{settings.redis_jobs_dedup_key}:{sale_id}", sale_id)
                         pipe.expire(f"{settings.redis_jobs_dedup_key}:{sale_id}", 86400)
 
-                  result = await pipe.execute()
+                  results = await pipe.execute()
                   
                   pipe = self.redis.pipeline()
                   

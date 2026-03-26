@@ -2,16 +2,28 @@
 from pos4africa.worker.components import Sync
 from pos4africa.manager.memory.long_term import LongTermMemory
 from pos4africa.infra.redis_client import get_redis
+from pos4africa.manager.job_producer import JobProducer
 from pos4africa.config import settings
 import json, asyncio
 
 async def main():
-      ltm = LongTermMemory(redis=(await get_redis()))
-      await ltm.warm_up()
-      redis = await get_redis()
-      ctm_id = await ltm.get_customer_id_by_name('MALAM ADAMU')
-      print(ctm_id, type(ctm_id))
-      print((await ltm.get_customers())['ibrahim bb shop'])
+      # job_p = JobProducer((await get_redis()))
+      # await job_p.produce(list(range(1, 16000)))
+      # ltm = LongTermMemory(redis=(await get_redis()))
+      # await ltm.warm_up()
+      # redis = await get_redis()
+      # ctm_id = await ltm.get_customer_id_by_name('MALAM ADAmu')
+      # print(ctm_id, type(ctm_id))
+      # print((await ltm.get_customers())['ibrahim bb shop'])
+      
+      # redis = await get_redis()
+            
+      # print(await redis.brpop(settings.redis_queue_key))
+      # print(await redis.brpop(settings.redis_queue_key))
+      # print(await redis.brpop(settings.redis_queue_key))
+      # print(await redis.brpop(settings.redis_queue_key))
+      # print(await redis.brpop(settings.redis_queue_key))
+      pass
       
 asyncio.run(main())
 
