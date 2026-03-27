@@ -6,6 +6,8 @@ from decimal import Decimal, InvalidOperation
 from dateutil import parser as dateutil_parser
 
 from pos4africa.shared.models.sale import RawSale, RawPayment, RawSaleItem, Sale, Payment, SaleItem
+from pos4africa.worker.components.base import BaseComponent
+from pos4africa.manager.memory.store import MemoryStore
 
 _DATE_FORMATS = [
       "%m/%d/%Y %I:%M %p",   # 03/16/2026 05:53 pm  ← pos4africa format
@@ -14,11 +16,11 @@ _DATE_FORMATS = [
       "%d/%m/%Y %H:%M:%S",
 ]
 
-class Parser:
-      def __init__(self):
-            pass
+class Parser(BaseComponent):
+      def __init__(self, node_id: str, memory: MemoryStore):
+            super().__init__(node_id, memory)
       
-      def run(self, raw_sale: RawSale) -> Sale | None:
+      async def run(self, raw_sale: RawSale) -> Sale | None:
             return self._parse(raw_sale)
       
       def _parse(self, raw: RawSale) -> Sale:
@@ -37,7 +39,7 @@ class Parser:
 
                   items_sold     = self._parse_int(raw.items_sold, "items_sold"),
                   items_returned = self._parse_int(raw.items_returned, "items_returned", default=0),
-                  items_net      = self._parse_int(raw.items_sold, "items_sold"),
+                  items_net      = self._parse_int(raw.items_sold, "items_sold") - self._parse_int(raw.items_returned, "items_returned", default=0),
                   
                   comment  = self._clean_str(raw.comment),
                   items    = [self._parse_item(i) for i in raw.items],

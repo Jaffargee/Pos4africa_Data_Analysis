@@ -15,8 +15,7 @@ import asyncio
 import orjson
 from pos4africa.config.settings import settings
 from pos4africa.infra.redis_client import RedisClient
-from pos4africa.worker.components import Sync
-from .search_nomalisation import search_customer
+from .search_nomalisation import search_
 
 def _normalise_name(name: str) -> str: return name.lower().strip()
 
@@ -31,6 +30,7 @@ class LongTermMemory:
 
       async def warm_up(self) -> None:
             await self._sync_customers()
+            await self._sync_accounts()
             self._refresh_task = asyncio.create_task(self._refresh_loop())
 
       async def shutdown(self) -> None:
@@ -46,6 +46,7 @@ class LongTermMemory:
                         print(exc)
 
       async def _sync_customers(self) -> None:
+            from pos4africa.worker.components import Sync 
             result = Sync.fetch_customers()
             if result:
                   mapping = {
@@ -53,26 +54,49 @@ class LongTermMemory:
                   }
                   if mapping:
                         await self._redis.hset(self._CUSTOMER_KEY, mapping=mapping)  # type: ignore[arg-type]
+                        
+      async def _sync_accounts(self) -> None:
+            from pos4africa.worker.components import Sync 
+            result = Sync.fetch_accounts()
+            if result:
+                  mapping = {
+                        _normalise_name(row.account_bank): str(row.id) for row in result if row.account_bank
+                  }
+                  
+                  if mapping:
+                        await self._redis.hset(settings.redis_accounts_id, mapping=mapping)
 
       # ── Customer lookup ───────────────────────────────────────────────────────
 
       async def get_customer_id_by_name(self, name: str) -> int | None:
             normalised_name = _normalise_name(name)
+            return await self.get_id_by_name(name, self._CUSTOMER_KEY, self.get_customers)
+
+      async def get_accounts_id_by_name(self, name: str) -> int | None:
+            normalised_name = _normalise_name(name)
+            return await self.get_id_by_name(name, settings.redis_accounts_id, self.get_accounts)
+      
+      async def get_id_by_name(self, name: str, redis_key: str, fuzz_list_callback: any) -> str | None:
+            normalised_name = _normalise_name(name)
             
-            customer_id = await self._redis.hget(self._CUSTOMER_KEY, normalised_name)
-            if customer_id:
-                  return int(customer_id)
+            _id = await self._redis.hget(redis_key, normalised_name)
             
-            customers = await self.get_customers()
-            best_match = search_customer(normalised_name, list(customers.keys()))
+            if _id:
+                  return _id
+            
+            _fuzz_list = fuzz_list_callback()
+            best_match = search_(normalised_name, list(_fuzz_list.keys()))
             
             if not best_match:
                   return None
             
-            return int(await self._redis.hget(self._CUSTOMER_KEY, best_match))
-
+            return await self._redis.hget(redis_key, best_match)
+            
       async def get_customers(self) -> dict | None:
             return await self._redis.hgetall(self._CUSTOMER_KEY) or None
+            
+      async def get_accounts(self) -> dict | None:
+            return await self._redis.hgetall(settings.redis_accounts_id) or None
 
       # ── Deduplication ─────────────────────────────────────────────────────────
 

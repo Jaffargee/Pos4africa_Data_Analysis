@@ -31,8 +31,8 @@ def configure_logging() -> None:
             processors=[*shared_processors, renderer],
             wrapper_class=structlog.make_filtering_bound_logger(log_level),
             context_class=dict,
-            logger_factory=structlog.PrintLoggerFactory(),
+            logger_factory=structlog.stdlib.LoggerFactory(),
       )
       
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
-      return structlog.get_logger(name)
+      return structlog.get_logger(name)   

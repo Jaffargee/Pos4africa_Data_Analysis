@@ -31,6 +31,7 @@ class Settings(BaseSettings):
       # ── Redis ─────────────────────────────────────────────────────────────────
       redis_url: str = "redis://localhost:6379/0"
       redis_customers_id: str
+      redis_accounts_id: str
       redis_jobs_dedup_key: str
       redis_queue_key: str
       redis_short_term_ttl: int = 300            # 5 minutes (seconds)

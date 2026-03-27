@@ -10,7 +10,7 @@ class Sync:
       _RETRY_DELAY = 1.5 # Seconds 1.5s (basic backoff)
       
       @staticmethod
-      def _select_all(table: str = settings.supabase_table_customers) -> list[dict[str, any]]:
+      def _select_all(table: str = settings.supabase_table_customers, columns: str = "id, pos_customer_id, name") -> list[dict[str, any]]:
             if not table:
                   raise ValueError("Table must be provided.")
             
@@ -18,7 +18,7 @@ class Sync:
 
             for attemps in range(Sync._MAX_RETRIES):
                   try:
-                        response = spb_client.table(table).select("id, pos_customer_id, name").execute()
+                        response = spb_client.table(table).select(columns).execute()
                         
                         if not response or response.data is None:
                               return []
@@ -42,4 +42,12 @@ class Sync:
             customers = Sync._select_all()
             
             return [Customer(**row) for row in customers if row.get("name")]
-                  
+      
+      @staticmethod
+      def fetch_accounts() -> list[Account]:
+            if not settings.supabase_table_accounts:
+                  raise ValueError('supabase_table_accounts is not configured.')
+
+            accounts = Sync._select_all(table=settings.supabase_table_accounts, columns="id, account_bank") 
+            
+            return [Account(**acct) for acct in accounts if acct.get("id")]
