@@ -116,7 +116,7 @@ class ProcessedSale(BaseModel):
       
       # Datetime
       invoice_datetime: datetime
-      scraped_at: datetime
+      scraped_at: datetime | None = None
 
       # persons
       salesperson: str

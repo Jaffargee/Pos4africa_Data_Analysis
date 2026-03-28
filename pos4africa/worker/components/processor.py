@@ -6,7 +6,8 @@ from pos4africa.shared.models.sale import (
 from pos4africa.worker.components.base import BaseComponent
 from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.models.sale import Sale
-
+from pos4africa.manager.memory.search_nomalisation import search_
+import re
 
 class Processor(BaseComponent):
 
@@ -17,7 +18,7 @@ class Processor(BaseComponent):
             
             self._DEFAULT_DB_ACCOUNTS_NAME = [
                   'ACCESS BANK', 'STANBIC IBTC BANK',
-                  
+                  'MONIEPOINT MFB', 'CASH PAYMENT'
             ]
 
       async def run(self, parsed_sale: Sale | None) -> ProcessedSale | None:
@@ -61,9 +62,9 @@ class Processor(BaseComponent):
                                     pos_sale_id = parsed_sale.pos_sale_id,
                                     pos_prd_id  = item.pos_prd_id,
                                     name        = item.name,
-                                    quantity    = self._parse_int(item.quantity, "quantity", 0),
-                                    unit_price  = self._parse_float(item.unit_price, "unit_price", 0.0),
-                                    total       = self._parse_float(item.total, "total", 0.0),
+                                    quantity    = item.quantity,
+                                    unit_price  = item.unit_price,
+                                    total       = item.total
                               )
                         )
                   except Exception as e:
@@ -78,14 +79,16 @@ class Processor(BaseComponent):
 
             for payment in parsed_sale.payments or []:
                   try:
-                        account_id = await self._resolve_account_id(payment.channel)
+                        
+                        best_match = search_(payment.channel, self._DEFAULT_DB_ACCOUNTS_NAME)
+                        account_id = await self._resolve_account_id('STANBIC IBTC BANK' if 'STORE ACCOUNT' in payment.channel else best_match)
                         
                         payments.append(
                               ProcessedPayment(
                                     pos_sale_id = parsed_sale.pos_sale_id,
                                     account_id  = str(account_id),
-                                    account     = payment.channel,
-                                    amount      = self._parse_float(payment.amount, "payment_amount", 0.0),
+                                    account     = 'STANBIC IBTC BANK' if 'STORE ACCOUNT' in payment.channel else best_match,
+                                    amount      = payment.amount
                               )
                         )
                   except Exception as e:
@@ -98,15 +101,17 @@ class Processor(BaseComponent):
             # ── Build final processed sale ─────────────────────────────────────
             return ProcessedSale(
                   pos_sale_id      = parsed_sale.pos_sale_id,
+                  pos_customer_id  = customer_id,
                   invoice_datetime = parsed_sale.invoice_datetime,
                   salesperson      = parsed_sale.salesperson,
-                  customer_id      = customer_id,
-                  account_id       = account_id,
-                  invoice_total    = self._parse_float(parsed_sale.invoice_total, "invoice_total", 0.0),
-                  items_sold       = self._parse_int(parsed_sale.items_sold, "items_sold", 0),
-                  items_returned   = self._parse_int(parsed_sale.items_returned, "items_returned", 0),
-                  change_due       = self._parse_float(parsed_sale.change_due, "change_due", 0.0),
+                  customer_name    = parsed_sale.customer_name,
+                  invoice_total    = parsed_sale.invoice_total,
+                  items_net        = parsed_sale.items_net,
+                  items_sold       = parsed_sale.items_sold,
+                  items_returned   = parsed_sale.items_returned,
+                  change_due       = parsed_sale.change_due,
                   comment          = parsed_sale.comment,
+                  is_anonymous_customer = parsed_sale.is_anonymous_customer,
                   items            = items,
                   payments         = payments,
             )
@@ -122,25 +127,3 @@ class Processor(BaseComponent):
             if not name:
                   return None
             return await self.memory.ltm.get_accounts_id_by_name(name)
-
-      def _parse_int(self, value: str | None, field: str, default: int | None = None) -> int:
-            if not value:
-                  if default is not None:
-                        return default
-                  raise ValueError(f"Missing int field '{field}'")
-
-            try:
-                  return int(float(value.strip()))
-            except (ValueError, AttributeError):
-                  raise ValueError(f"Cannot parse '{value}' as int for '{field}'")
-
-      def _parse_float(self, value: str | None, field: str, default: float | None = None) -> float:
-            if not value:
-                  if default is not None:
-                        return default
-                  raise ValueError(f"Missing float field '{field}'")
-
-            try:
-                  return float(value.replace(",", "").strip())
-            except (ValueError, AttributeError):
-                  raise ValueError(f"Cannot parse '{value}' as float for '{field}'")
