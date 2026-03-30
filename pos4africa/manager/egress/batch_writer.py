@@ -77,24 +77,24 @@ class BatchWriter:
             except Exception as exc:
                   # Network / transport error
                   log.error(
-                  "batch_writer.transport_error",
-                  error=str(exc),
-                  chunk_size=len(chunk),
+                        "batch_writer.transport_error",
+                        error=str(exc),
+                        chunk_size=len(chunk),
                   )
                   raise
 
             # Supabase-specific error handling
             if hasattr(result, "error") and result.error:
                   log.error(
-                  "batch_writer.supabase_error",
-                  error=str(result.error),
-                  chunk_size=len(chunk),
+                        "batch_writer.supabase_error",
+                        error=str(result.error),
+                        chunk_size=len(chunk),
                   )
                   raise RuntimeError(f"Supabase upsert error: {result.error}")
 
             # Optional: sanity check response
             if not hasattr(result, "data") or result.data is None:
                   log.warning(
-                  "batch_writer.empty_response",
-                  chunk_size=len(chunk),
+                        "batch_writer.empty_response",
+                        chunk_size=len(chunk),
                   )
