@@ -1,6 +1,6 @@
 
 class AppError(Exception):
-      def __init__(self, sale_id: int, message: str, code: str = None, context: dict = None):
+      def __init__(self, sale_id: int | str | None, message: str, code: str = None, context: dict = None):
             self.code = code
             self.context = context or {}
 

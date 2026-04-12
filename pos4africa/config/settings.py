@@ -13,13 +13,13 @@ class Settings(BaseSettings):
       pos_base_url: str
       pos_username: str
       pos_password: SecretStr
-      pos_login_path: str = "/login"
-      pos_sales_path: str = "/sales"
+      pos_login_path: str = "/index.php/login"
+      pos_sales_path: str = "/index.php/sales/receipt"
       pos_request_timeout: float = 30.0          # seconds per HTTP request
       pos_page_size: int = 50                    # records per page
 
       # ── Worker pool ───────────────────────────────────────────────────────────
-      worker_count: int = Field(default=8, ge=1, le=32)
+      worker_count: int = Field(default=32, ge=1, le=32)
       worker_batch_size: int = 500              # sales records per worker batch
       max_queue_size: int = 5000
       

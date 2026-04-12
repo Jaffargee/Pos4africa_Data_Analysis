@@ -24,8 +24,12 @@ from aio_pika.abc import AbstractIncomingMessage
 from pos4africa.config.settings import settings
 from pos4africa.manager.egress.batch_writer import BatchWriter
 from pos4africa.shared.utils.circuit_breaker import (
-    CircuitBreaker,
-    CircuitBreakerOpen,
+      CircuitBreaker,
+      CircuitBreakerConfig,
+      CircuitBreakerError,
+      CircuitBreakerMetrics,
+      CircuitBreakerOpenError,
+      CircuitBreakerRegistry
 )
 from pos4africa.shared.utils.logger import get_logger
 
@@ -37,7 +41,14 @@ _FLUSH_TIMEOUT = 5.0  # seconds
 class ManagerEgressConsumer:
       def __init__(self) -> None:
             self._writer = BatchWriter()
-            self._cb = CircuitBreaker(name="supabase_egress")
+            
+            self.cb_config = CircuitBreakerConfig(
+                  failure_threshold=0.5,  # Open if >50% failures
+                  recovery_timeout=30.0,  # Stay open for 30 seconds
+                  include_exceptions=Exception, # Consider all exceptions as failures
+            )
+            self.cb_registry = CircuitBreakerRegistry(self.cb_config)
+            self._cb = self.cb_registry.get_circuit_breaker("supabase_egress")
 
             self._batch: list[dict] = []
             self._pending_msgs: list[AbstractIncomingMessage] = []
@@ -55,7 +66,6 @@ class ManagerEgressConsumer:
                   queue = await channel.declare_queue(settings.rabbitmq_queue_sales, durable=True)
 
                   log.info("egress_consumer.listening", queue=settings.rabbitmq_queue_sales)
-
                   # Start background flush loop
                   self._flush_task = asyncio.create_task(self._periodic_flush())
 
@@ -80,7 +90,7 @@ class ManagerEgressConsumer:
       async def _handle_message(self, message: AbstractIncomingMessage) -> None:
             try:
                   payload = orjson.loads(message.body)
-
+                  
                   self._batch.append(payload)
                   self._pending_msgs.append(message)
 
@@ -112,7 +122,7 @@ class ManagerEgressConsumer:
                   for msg in msgs:
                         await msg.ack()
 
-            except CircuitBreakerOpen as exc:
+            except CircuitBreakerOpenError as exc:
                   log.error("egress_consumer.circuit_open", error=str(exc))
 
                   # Requeue in memory (retry later)

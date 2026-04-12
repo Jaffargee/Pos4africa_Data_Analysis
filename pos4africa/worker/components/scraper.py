@@ -13,10 +13,30 @@ class Scraper(BaseComponent):
             "MONIEPOINT", "ACCESS BANK", "CASH",
             "STORE ACCOUNT", "TRADE BY BARTER", "STANBIC IBTC"
       ]
+      
+      @property
+      def soup(self) -> BeautifulSoup:
+            """Guarded access to soup, raises if None."""
+            if self._soup is None:
+                  raise ScraperError(
+                        message=f"[Invoice {self.sale_id}] BeautifulSoup not initialized. Call run() first.",
+                        code=ErrorCodes.POSSIBLE_HTML_STRUCTURE_CHANGED,
+                        sale_id=self.sale_id or "UNKNOWN"
+                  )
+            return self._soup
 
-      def __init__(self, node_id: str, memory: MemoryStore, sale_id: str, html_content: str):
+      @soup.setter
+      def soup(self, value: BeautifulSoup | None):
+            self._soup = value
+
+      def __init__(self, node_id: str, memory: MemoryStore):
             super().__init__(node_id, memory)
+            self.sale_id: int | None  = None
+            self._soup: BeautifulSoup | None = None
 
+      # ── Main entry ────────────────────────────────────────────────────────────
+
+      async def run(self, sale_id: int, html_content: str) -> RawSale:
             if not sale_id or not html_content:
                   raise ScraperError(
                         message="sale_id and html_content cannot be empty.",
@@ -24,12 +44,8 @@ class Scraper(BaseComponent):
                         sale_id=sale_id or "UNKNOWN"
                   )
 
+            self._soup = BeautifulSoup(html_content, "html.parser")
             self.sale_id = sale_id
-            self.soup    = BeautifulSoup(html_content, "html.parser")
-
-      # ── Main entry ────────────────────────────────────────────────────────────
-
-      async def run(self) -> RawSale:
             return self._scrape()
 
       def _scrape(self) -> RawSale:
@@ -85,7 +101,7 @@ class Scraper(BaseComponent):
             return any(kw in name.lower() for kw in self._ANONYMOUS_ACCOUNTS)
 
       def _extract_invoice_total(self) -> str | None:
-            element = self.soup.select_one(".invoice-footer .invoice-footer-value.invoice-total")
+            element = self._soup.select_one(".invoice-footer .invoice-footer-value.invoice-total")
 
             if not element:
                   return None
@@ -94,7 +110,7 @@ class Scraper(BaseComponent):
             return total if total else None
 
       def _extract_salesperson(self) -> str | None:
-            element = self.soup.select_one("ul.invoice-detail li:nth-child(4)")
+            element = self._soup.select_one("ul.invoice-detail li:nth-child(4)")
 
             if not element:
                   return None
@@ -102,21 +118,22 @@ class Scraper(BaseComponent):
             label = element.find("span")
             if label:
                   label.extract()
-
+            
             value = element.get_text(strip=True)
             return value if value else None
 
       def _extract_invoice_datetime(self) -> str | None:
-            element = self.soup.select_one("ul.invoice-detail strong")
+            element = self._soup.select_one("ul.invoice-detail strong")
 
             if not element:
                   return None
 
             value = element.get_text(strip=True)
+            print(value, element)
             return value if value else None
 
       def _extract_sale_items(self) -> list[RawSaleItem]:
-            tbodys = self.soup.select('#receipt-draggable tbody[data-item-class="item"]')
+            tbodys = self._soup.select('#receipt-draggable tbody[data-item-class="item"]')
 
             if not tbodys:
                   return []
@@ -135,8 +152,8 @@ class Scraper(BaseComponent):
             return items
 
       def _extract_payments(self) -> list[RawPayment]:
-            all_footer_values = self.soup.select(".invoice-footer .invoice-footer-value")
-            payment_amount_els = self.soup.select(".invoice-footer .invoice-footer-value.invoice-payment")
+            all_footer_values = self._soup.select(".invoice-footer .invoice-footer-value")
+            payment_amount_els = self._soup.select(".invoice-footer .invoice-footer-value.invoice-payment")
 
             if not all_footer_values or not payment_amount_els:
                   return []
@@ -170,7 +187,7 @@ class Scraper(BaseComponent):
             return self._extract_optional(".invoice-policy")
 
       def _extract_change_due(self) -> str | None:
-            rows = self.soup.select(".invoice-footer-heading")
+            rows = self._soup.select(".invoice-footer-heading")
 
             for heading in rows:
                   if "change due" in heading.get_text(strip=True).lower():
@@ -180,7 +197,7 @@ class Scraper(BaseComponent):
             return None
 
       def _extract_items_sold(self) -> str | None:
-            rows = self.soup.select(".invoice-footer-heading")
+            rows = self._soup.select(".invoice-footer-heading")
 
             for heading in rows:
                   if "number of items sold" in heading.get_text(strip=True).lower():
@@ -190,7 +207,7 @@ class Scraper(BaseComponent):
             return None
 
       def _extract_items_returned(self) -> str | None:
-            rows = self.soup.select(".invoice-footer-heading")
+            rows = self._soup.select(".invoice-footer-heading")
 
             for heading in rows:
                   if "item returned" in heading.get_text(strip=True).lower():

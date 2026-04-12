@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html class="english">
+<head>
+	<meta charset="UTF-8" />
+    <title>TAHIR GENERAL MERCHANT -- Powered By POS4AFRICA Point Of Sale</title>
+	<link rel="icon" href="https://pos4africa.ng/fahadtahir/favicon.ico" type="image/x-icon"/>	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> <!--320-->
+	<base href="https://pos4africa.ng/fahadtahir/" />
+	
+	<link rel="icon" href="https://pos4africa.ng/fahadtahir/favicon.ico" type="image/x-icon"/>
+	<script type="text/javascript">
+		
+		var SITE_URL= "https://pos4africa.ng/fahadtahir/index.php";
+		var BASE_URL= "https://pos4africa.ng/fahadtahir/";
+		var ENABLE_SOUNDS = false;
+		var JS_DATE_FORMAT = "MM\/DD\/YYYY";
+		var JS_TIME_FORMAT = "hh:mm a";
+		var LOCALE =  "en";
+		var MONEY_NUM_DECIMALS = 2;
+		var IS_MOBILE = false;
+		var ENABLE_QUICK_EDIT = false;
+	</script>
+			<link rel="stylesheet" type="text/css" href="https://pos4africa.ng/fahadtahir/assets/css_phppointofsale/all.css?1665064588" />
+				<script src="https://pos4africa.ng/fahadtahir/assets/js/all.js?1665064588" type="text/javascript" charset="UTF-8"></script>
+		<script type="text/javascript">
+		var SCREEN_WIDTH = $(window).width();
+		var SCREEN_HEIGHT = $(window).height();
+		COMMON_SUCCESS = "Success";
+		COMMON_ERROR = "Error";
+		
+		bootbox.addLocale('ar', {
+		    OK : 'حسنا',
+		    CANCEL : 'إلغاء',
+		    CONFIRM : 'تأكيد'			
+		});
+		
+		bootbox.addLocale('km', {
+		    OK :'យល់ព្រម',
+		    CANCEL : 'បោះបង់',
+		    CONFIRM : 'បញ្ជាក់ការ'			
+		});
+		bootbox.setLocale(LOCALE);
+		$.ajaxSetup ({
+			cache: false,
+			headers: { "cache-control": "no-cache" }
+		});
+		
+		$(document).on('show.bs.modal','.bootbox.modal', function (e) 
+		{
+			var isShown = ($(".bootbox.modal").data('bs.modal') || {}).isShown;
+			//If we have a dialog already don't open another one
+			if (isShown)
+			{
+				//Cleanup the dialog(s) that was added to dom
+				$('.bootbox.modal:not(:first)').remove();
+				
+				//Prevent double modal from showing up
+				return e.preventDefault();
+			}
+		});
+		
+		
+		toastr.options = {
+		  "closeButton": true,
+		  "debug": false,
+		  "newestOnTop": false,
+		  "progressBar": false,
+		  "positionClass": "toast-top-right",
+		  "preventDuplicates": false,
+		  "onclick": null,
+		  "showDuration": "300",
+		  "hideDuration": "1000",
+		  "timeOut": "5000",
+		  "extendedTimeOut": "1000",
+		  "showEasing": "swing",
+		  "hideEasing": "linear",
+		  "showMethod": "fadeIn",
+		  "hideMethod": "fadeOut"
+		}
+		
+    $.fn.editableform.buttons = 
+      '<button tabindex="-1" type="submit" class="btn btn-primary btn-sm editable-submit">'+
+        '<i class="icon ti-check"></i>'+
+      '</button>'+
+      '<button tabindex="-1" type="button" class="btn btn-default btn-sm editable-cancel">'+
+        '<i class="icon ti-close"></i>'+
+      '</button>';
+	  
+ 	  $.fn.editable.defaults.emptytext = "Empty";
+		
+		$(document).ready(function()
+		{
+			$(".wrapper.mini-bar .left-bar").hover(
+			   function() {
+			     $(this).parent().removeClass('mini-bar');
+			   }, function() {
+			     $(this).parent().addClass('mini-bar');
+			   }
+			 );
+
+		    $('.menu-bar').click(function(e){                  
+		    	e.preventDefault();
+		        $(".wrapper").toggleClass('mini-bar');        
+		    }); 
+    					
+			//Ajax submit current location
+			$(".set_employee_current_location_id").on('click',function(e)
+			{
+				e.preventDefault();
+
+				var location_id = $(this).data('location-id');
+				$.ajax({
+				    type: 'POST',
+				    url: 'https://pos4africa.ng/fahadtahir/index.php/home/set_employee_current_location_id',
+				    data: { 
+				        'employee_current_location_id': location_id, 
+				    },
+				    success: function(){
+				    	window.location.reload(true);	
+				    }
+				});
+				
+			});
+			
+			$(".set_employee_language").on('click',function(e)
+			{
+				e.preventDefault();
+
+				var language_id = $(this).data('language-id');
+				$.ajax({
+				    type: 'POST',
+				    url: 'https://pos4africa.ng/fahadtahir/index.php/employees/set_language',
+				    data: { 
+				        'employee_language_id': language_id, 
+				    },
+				    success: function(){
+				    	window.location.reload(true);	
+				    }
+				});
+				
+			});
+			
+								//Keep session alive by sending a request every 5 minutes
+					setInterval(function(){$.get('https://pos4africa.ng/fahadtahir/index.php/home/keep_alive');}, 300000);
+										});
+	</script>
+</head>
+<body>
+	<div class="modal fade hidden-print" id="myModal" tabindex="-1" role="dialog" aria-hidden="true"></div>
+	<div class="modal fade hidden-print" id="myModalDisableClose" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static"></div>
+	
+	<div class="wrapper mini-bar sales-bar">
+		<div class="left-bar hidden-print" >
+			<div class="admin-logo" style="">
+				<div class="logo-holder pull-left">
+					<img src="https://pos4africa.ng/fahadtahir/assets/img/header_logo.png" class="hidden-print logo" id="header-logo" alt="" />				</div>
+				<!-- logo-holder -->
+							
+			</div>
+			<!-- admin-logo -->
+
+			<ul class="list-unstyled menu-parent" id="mainMenu">
+			
+				
+				<li  class="home">
+					<a tabindex = "-1" href="https://pos4africa.ng/fahadtahir/index.php/home" class="waves-effect waves-light">
+						<i class="icon ti-dashboard"></i>
+						<span class="text">Dashboard</span>
+					</a></li>
+									<li class="active sales">
+						<a tabindex = "-1" href="https://pos4africa.ng/fahadtahir/index.php/sales"  class="waves-effect waves-light">
+							<i class="icon ti-shopping-cart"></i>
+							<span class="text">Sales</span>
+						</a>
+					</li>
+												
+                <li>
+					<a href="https://pos4africa.ng/fahadtahir/index.php/home/logout" tabindex="-1"><i class="icon ti-power-off"></i><span class="text">Logout</span></a>
+                </li>
+			</ul>
+		</div>
+		<!-- left-bar -->
+
+		<div class="content" id="content">
+							<div class="alert alert-danger" style="margin: 0 0 20px 0; text-align: center; font-weight: bold; font-size: 16px;">
+					⚠️ Your subscription expires in 7 days. Please contact POS4Africa to renew.				</div>
+					<div class="overlay hidden-print"></div>			
+			<div class="top-bar hidden-print">				
+				<nav class="navbar navbar-default top-bar">
+					<div class="menu-bar-mobile" id="open-left"><i class="ti-menu"></i></div>
+					<div class="nav navbar-nav top-elements navbar-breadcrumb hidden-xs">
+						 <a  tabindex="-1"  href="https://pos4africa.ng/fahadtahir/index.php/home">Dashboard</a><a tabindex = "-1" href="https://pos4africa.ng/fahadtahir/index.php/sales">Sales</a><a tabindex = "-1" class="current" href="https://pos4africa.ng/fahadtahir/index.php/sales/receipt/15747">Sales Receipt</a>					</div>	
+
+					<ul class="nav navbar-nav navbar-right top-elements">															
+																																	
+						
+
+						
+						<li class="dropdown">
+							<a tabindex = "-1" href="#" class="dropdown-toggle avatar_width" data-toggle="dropdown" role="button" aria-expanded="false"><span class="avatar-holder">
+
+							<img src="https://pos4africa.ng/fahadtahir/assets/assets/images/avatar-default.jpg" alt="" /></span>
+
+							<span class="avatar_info visible-md visible-lg">BB S</span></a>
+							<ul class="dropdown-menu user-dropdown animated fadeInUp wow avatar_drop neat_drop" data-wow-duration="1500ms"  role="menu">
+							<li>
+									<a tabindex = "-1" id="support_link" target="_blank" href="http://POS4AFRICA.com/"><i class="ion-help-buoy"></i><span class="text">Support/Documentation</span></a>									
+							</li>
+							
+																
+																<li>
+									<a tabindex = "-1" id="switch_user" href="https://pos4africa.ng/fahadtahir/index.php/login/switch_user/0" data-toggle="modal" data-target="#myModalDisableClose"><i class="ion-ios-toggle-outline"></i><span class="text">Switch User</span></a>
+								</li>
+																								
+								<li>
+								<a href="https://pos4africa.ng/fahadtahir/index.php/home/logout" class="logout_button" tabindex="-1"><i class="ion-power"></i><span class="text">Logout</span></a>								</li>			
+							</ul>
+						</li>							
+					</ul>
+				</nav>
+			</div>
+			<!-- top-bar -->
+			<div class="main-content">
+
+
+<!-- Css Loader  -->
+<div class="spinner hidden" id="ajax-loader" style="width:100vw;  height:100vh;">
+	<div class="rect1"></div>
+	<div class="rect2"></div>
+	<div class="rect3"></div>
+</div>
+
+	<div class="manage_buttons hidden-print">
+
+		<div class="row">
+			<div class="col-md-6">
+				<div class="hidden-print search no-left-border">
+					<ul class="list-inline print-buttons">
+						<li></li>
+
+													<li>
+								<form action="https://pos4africa.ng/fahadtahir/index.php/sales/change_sale/15747" id="sales_change_form" method="post" accept-charset="utf-8">
+									<button class="btn btn-primary btn-lg hidden-print" id="edit_sale"> Edit </button>
+
+																</form>
+							</li>
+						
+													<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="fufillment_sheet_button" onclick="window.open('https://pos4africa.ng/fahadtahir/index.php/sales/fulfillment/15747', 'blank');"> Fulfillment Sheet</button>
+							</li>
+						
+						<li>
+							<button class="btn btn-primary btn-lg hidden-print gift_receipt" id="gift_receipt_button" onclick="toggle_gift_receipt()"> Gift Receipt </button>
+						</li>
+						
+																			<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="fufillment_sheet_button" onclick="window.open('https://pos4africa.ng/fahadtahir/index.php/sales/create_po/15747', 'blank');"> Create PO</button>
+							</li>
+						
+													<li>
+								<a href="https://pos4africa.ng/fahadtahir/index.php/sales/download_receipt/15747" id="download_pdf" class="btn btn-primary btn-lg hidden-print"><span class="ion-arrow-down-a"></span></a>							</li>
+															<li>
+									<br />
+									<a href="https://pos4africa.ng/fahadtahir/index.php/sales/clone_sale/15747" id="clone" class="btn btn-primary btn-lg hidden-print">Clone</a>								</li>
+													
+													<li>
+								<a href="https://pos4africa.ng/fahadtahir/index.php/sales/return_order/15747" id="return_order" class="btn btn-primary btn-lg hidden-print">Return</a>							</li>
+											</ul>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="buttons-list">
+					<div class="pull-right-btn">
+						<ul class="list-inline print-buttons">
+							<li>
+								<input type="checkbox" name="print_duplicate_receipt" value="1" id="print_duplicate_receipt"  />
+&nbsp;<label for="print_duplicate_receipt"><span></span>Duplicate receipt</label>							</li>
+							<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="print_button" onclick="print_receipt()"> Print </button>
+							</li>
+														<li>
+								<a href="https://pos4africa.ng/fahadtahir/index.php/sales/open_drawer" onclick="window.open('https://pos4africa.ng/fahadtahir/index.php/sales/open_drawer', '_blank', 'width=800,height=600,scrollbars=yes,menubar=no,status=yes,resizable=yes,screenx=0,screeny=0'); return false;" class="btn btn-primary btn-lg hidden-print" target="_blank"><i class="ion-android-open"></i> Pop Open Cash Drawer</a>							</li>
+														<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="new_sale_button_1" onclick="window.location='https://pos4africa.ng/fahadtahir/index.php/sales'"> New Sale </button>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+<div class="row manage-table receipt_small" id="receipt_wrapper">
+	<div class="col-md-12" id="receipt_wrapper_inner">
+		<div class="panel panel-piluku">
+			<div class="panel-body panel-pad">
+				<div class="row">
+					<!-- from address-->
+					<div class="col-md-4 col-sm-4 col-xs-12">
+						<ul class="list-unstyled invoice-address" style="margin-bottom:2px;">
+							
+															<li class="company-title">TAHIR GENERAL MERCHANT</li>
+							
+							
+							<li class="nl2br">123 Nowhere street</li>
+							<li>555-555-5555</li>
+													</ul>
+					</div>
+					<!--  sales-->
+					<div class="col-md-4 col-sm-4 col-xs-12">
+						<ul class="list-unstyled invoice-detail" style="margin-bottom:2px;">
+							<li>
+																	Sales Receipt									<br>
+																<strong>03/16/2026 05:05 pm</strong>
+							</li>
+
+
+
+															<li class="remove_when_mobile"><span>Sale ID:</span><a href="https://pos4africa.ng/fahadtahir/index.php/r/4EwY?signature=203b913573fd44916d157b01cf65f5f7ccb80c0e">FAHAD 15747</a>								<li class="keep_when_mobile" style="display: none"><span>Sale ID:</span>FAHAD 15747
+								
+								
+
+								</li>
+																
+								
+								
+								
+																	<li><span>Employee:</span>BB S</li>
+															</ul>
+					</div>
+					<!-- to address-->
+					<div class="col-md-4 col-sm-4 col-xs-12">
+
+													<ul class="list-unstyled invoice-address invoiceto" style="margin-bottom:2px;">
+
+																	<li class="invoice-to">Bill To:</li>
+									<li>Customer: Abba Tahir Shop </li>
+
+								
+								
+																									
+																																																																								
+								
+															</ul>
+											</div>
+
+					<!-- delivery address-->
+					<div class="col-md-12 col-sm-12 col-xs-12">
+
+						
+											</div>
+
+				</div>
+				
+				<table style="width:100%;" id='receipt-draggable'>
+					<thead>
+						<tr>
+							<!-- invoice heading-->
+							<th class="invoice-table">
+								<div class="row">
+									<div class="col-md-12 col-sm-12 col-xs-12">
+										<div class="invoice-head item-name">Item Name</div>
+									</div>
+									<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+										<div class="invoice-head text-right item-price">
+											Price										</div>
+									</div>
+									<div class="col-md-4 col-sm-4 col-xs-4">
+										<div class="invoice-head text-right item-qty">Qty.</div>
+									</div>
+
+																		<div class="col-md-4 col-sm-4 col-xs-4">
+										<div class="invoice-head pull-right item-total gift_receipt_element">Total</div>
+									</div>
+
+								</div>
+							</th>
+						</tr>
+					</thead>
+											<tbody data-line="0" data-sale-id="15747" data-item-id="423" data-item-name="HOLLANTEX " data-item-qty="1.0000000000" data-item-price="12000" data-item-total="12000" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													HOLLANTEX 												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+
+																							</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦12,000.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												1
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦12,000.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+									</table>
+
+								<div class="invoice-footer gift_receipt_element">
+					
+					<div class="row">
+						<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+							<div class="invoice-footer-heading">Sub Total</div>
+						</div>
+						<div class="col-md-2 col-sm-2 col-xs-4">
+							<div class="invoice-footer-value">
+								₦12,000.00							</div>
+						</div>
+					</div>
+					
+					<div class="row">
+						<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+							<div class="invoice-footer-heading">Total</div>
+						</div>
+						<div class="col-md-2 col-sm-2 col-xs-4">
+							<div class="invoice-footer-value invoice-total" style="font-size: 150%;font-weight: bold;;">
+
+
+																	₦12,000.00								
+							</div>
+						</div>
+					</div>
+					
+										
+
+					<div class="row">
+													<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+								<div class="invoice-footer-heading">Number of items sold</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-total">1</div>
+							</div>
+						
+						
+					</div>
+
+											<div class="row">
+							<div class="col-md-offset-4 col-sm-offset-4 col-xs-offset-4 col-md-4 col-sm-4 col-xs-4">
+								<div class="invoice-footer-heading">03/16/2026 05:05 pm</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+																	<div class="invoice-footer-value">ACCESS BANK</div>
+															</div>
+
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-payment">
+
+
+
+																			₦12,000.00									
+
+								</div>
+							</div>
+
+							
+						</div>
+					
+																
+					
+					
+											<div class="row">
+							<div class="col-md-offset-8 col-sm-offset-8 col-xs-offset-2 col-md-2 col-sm-2 col-xs-6">
+								<div class="invoice-footer-heading">Customer Account Balance</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-total">₦126,500.00</div>
+							</div>
+						</div>
+					
+					
+
+					
+
+					
+
+					
+											<div class="row">
+							<div class="col-md-offset-8 col-sm-offset-8 col-xs-offset-2 col-md-2 col-sm-2 col-xs-6">
+								<div class="invoice-footer-heading">Change Due</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-total">
+
+																			₦0.00									
+
+								</div>
+							</div>
+						</div>
+					
+
+					<div class="row">
+						<div class="col-md-12 col-sm-12 col-xs-12">
+							<div class="text-center invoice-policy">
+								RAHAMA S FULANI							</div>
+						</div>
+					</div>
+				</div>
+				<!-- invoice footer-->
+				<div class="row">
+					<div class="col-md-12 col-sm-12 col-xs-12">
+						<div class="invoice-policy" id="invoice-policy-return">
+							Change return policy						</div>
+
+						<div class="invoice-policy" id="invoice-policy-return-mobile" style="display: none;line-height:1;">
+							Change<i></i> return<i></i> policy						</div>
+
+						<div id="receipt_type_label" style="display: none;" class="receipt_type_label invoice-policy">
+							Merchant Copy						</div>
+
+																					<div id='barcode' class="invoice-policy">
+									<img src='https://pos4africa.ng/fahadtahir/index.php/barcode/index/svg?barcode=FAHAD 15747&text=FAHAD 15747' alt=''/>								</div>
+													
+												
+												<div id="announcement" class="invoice-policy">
+													</div>
+
+						<div id="announcement-mobile" class="invoice-policy" style="display: none;line-height:1;">
+													</div>
+
+
+
+											</div>
+
+											<div class="col-md-6 col-sm-6" style="margin-top: 30px;">
+							<div id="signature">
+								
+								
+							</div>
+						</div>
+									</div>
+			</div>
+			<!--container-->
+		</div>
+	</div>
+</div>
+</div>
+
+
+<div id="duplicate_receipt_holder" style="display: none;">
+
+</div>
+
+<style>
+	#receipt-draggable tbody {
+		cursor: move;
+		width: 100%;
+	}
+
+	.invoice-head {
+		cursor: pointer;
+	}
+</style>
+
+
+<script type="text/javascript">
+	
+
+	$(document).ready(function() {
+
+				$("#edit_sale").click(function(e) {
+			e.preventDefault();
+			bootbox.confirm("Are you sure you want to edit this sale? This will replace the current sale.", function(result) {
+				if (result) {
+					$("#sales_change_form").submit();
+				}
+			});
+		});
+
+		$("#email_receipt,#sms_receipt").click(function() {
+			$.get($(this).attr('href'), function() {
+				show_feedback('success', "Receipt sent", "Success");
+
+			});
+
+			return false;
+		});
+		
+				$("#receipt-draggable").sortable({
+			items: 'tbody',
+			cursor: 'move',
+			axis: 'y',
+			dropOnEmpty: false,
+			start: function(e, ui) {
+				ui.item.addClass("selected");
+				var td_width = [];
+				var td_height = [];
+				for( let i = 0; i < $("#receipt-draggable tbody").length; i ++){
+					if($($("#receipt-draggable tbody")[i]).hasClass('selected') || $($("#receipt-draggable tbody")[i]).hasClass('ui-sortable-placeholder')){
+						continue;
+					}else{
+						td_height = $($("#receipt-draggable tbody")[i]).height();
+						for(let j = 0; j<$($("#receipt-draggable tbody")[i]).find(".invoice-item-details td").length; j++){
+							td_width.push($($($("#receipt-draggable tbody")[i]).find(".invoice-item-details td")[j]).width());
+						}
+						break;
+					}
+				}
+
+				$(".ui-sortable-placeholder").html("<tr><td>&nbsp;</td></tr>");
+				$(".ui-sortable-placeholder").height(td_height+'px');
+
+				for(let k=0; k<$($("#register tbody.selected tr")[0]).find('td').length; k++){
+					$($($("#register tbody.selected tr")[0]).find('td')[k]).width(td_width[k]+'px');
+				}
+
+			},
+			stop: function(e, ui) {
+
+				for(let k=0; k<$($("#register tbody.selected tr")[0]).find('td').length; k++){
+					$($($("#register tbody.selected tr")[0]).find('td')[k]).attr('style','');
+				}
+				ui.item.removeClass("selected");
+
+				updateItemOrder();
+			},
+			sort:function(e){
+				$(".ui-sortable-helper").css("width", $("table#register").width()+'px');
+				$(".ui-sortable-helper tr").css("width", $("table#register").width()+'px');
+			}
+		});
+				
+		function updateItemOrder() {
+			var length = $("#receipt-draggable tbody").length;
+			var item_lines = [];
+			for (let i = 0; i < length; i++) {
+				let item_id = $($("#receipt-draggable tbody")[i]).data('item-id');
+				let sale_id = $($("#receipt-draggable tbody")[i]).data('sale-id');
+				let item_class = $($("#receipt-draggable tbody")[i]).data('item-class');
+				item_lines.push({
+					item_id: item_id,
+					sale_id: sale_id,
+					item_class: item_class,
+					receipt_line_sort_order: (length - i)
+				});
+			}
+
+			$('#ajax-loader').removeClass('hidden');
+			var href = 'https://pos4africa.ng/fahadtahir/index.php/ecommerce/manual_sync';
+			clear_order_icon();
+
+			$.ajax({
+				type: "POST",
+				url: SITE_URL + '/sales/update_sales_item_order',
+				data: {
+					item_lines: item_lines
+				},
+				dataType: "json",
+				success: function(data) {
+					$('#ajax-loader').addClass('hidden');
+					console.log("update");
+				},
+				error: function() {
+					$('#ajax-loader').addClass('hidden');
+					console.log("update");
+				}
+			});
+		}
+
+		function invoice_receipt_item_sort(obj, item_type, order_type) {
+			var length = $("#receipt-draggable tbody").length;
+			var item_lines = [];
+			for (let i = 0; i < length; i++) {
+				let item_id = $($("#receipt-draggable tbody")[i]).data('item-id');
+				let sale_id = $($("#receipt-draggable tbody")[i]).data('sale-id');
+				let item_name = $($("#receipt-draggable tbody")[i]).data('item-name');
+				let item_price = $($("#receipt-draggable tbody")[i]).data('item-price');
+				let item_qty = $($("#receipt-draggable tbody")[i]).data('item-qty');
+				let item_total = $($("#receipt-draggable tbody")[i]).data('item-total');
+				let item_class = $($("#receipt-draggable tbody")[i]).data('item-class');
+
+				item_lines.push({
+					item_id: item_id,
+					sale_id: sale_id,
+					item_class: item_class,
+					item_name: item_name,
+					item_price: item_price,
+					item_qty: item_qty,
+					item_total: item_total,
+					line: (length - i)
+				});
+			}
+
+			if (item_type == 'price') {
+				if (order_type == 'down')
+					item_lines.sort(function(a, b) {
+						return b.item_price - a.item_price
+					});
+				else
+					item_lines.sort(function(a, b) {
+						return a.item_price - b.item_price
+					});
+			} else if (item_type == 'qty') {
+				if (order_type == 'down')
+					item_lines.sort(function(a, b) {
+						return b.item_qty - a.item_qty
+					});
+				else
+					item_lines.sort(function(a, b) {
+						return a.item_qty - b.item_qty
+					});
+			} else if (item_type == 'total') {
+				if (order_type == 'down')
+					item_lines.sort(function(a, b) {
+						return b.item_total - a.item_total
+					});
+				else
+					item_lines.sort(function(a, b) {
+						return a.item_total - b.item_total
+					});
+			} else if (item_type == 'name') {
+				if (order_type == 'down')
+					item_lines.sort(function(a, b) {
+						if (a.item_name > b.item_name) {
+							return -1;
+						}
+						if (b.item_name > a.item_name) {
+							return 1;
+						}
+						return 0;
+					});
+				else
+					item_lines.sort(function(a, b) {
+						if (b.item_name > a.item_name) {
+							return -1;
+						}
+						if (b.item_name > a.item_name) {
+							return 1;
+						}
+						return 0;
+					});
+			}
+
+			sort_items(item_lines);
+			if (order_type == 'up') {
+				$(obj).removeClass('ion-arrow-down-b');
+				$(obj).addClass('ion-arrow-up-b');
+			} else {
+				$(obj).removeClass('ion-arrow-up-b');
+				$(obj).addClass('ion-arrow-down-b');
+			}
+		}
+
+		function sort_items(item_lines) {
+			for (let i = 0; i < item_lines.length; i++) {
+				var obj_origin = $("#receipt-draggable tbody[data-item-id='" + item_lines[i]['item_id'] + "']");
+				var obj_new = obj_origin.clone();
+				$("#receipt-draggable").append(obj_new);
+				obj_origin.remove();
+			}
+			updateItemOrder();
+		}
+
+		function clear_order_icon() {
+			$(".invoice-head.item-name, .invoice-head.item-price, .invoice-head.item-qty, .invoice-head.item-total").removeClass('ion-arrow-up-b');
+			$(".invoice-head.item-name, .invoice-head.item-price, .invoice-head.item-qty, .invoice-head.item-total").removeClass('ion-arrow-down-b');
+		}
+
+		$(".invoice-head.item-name, .invoice-head.item-price, .invoice-head.item-qty, .invoice-head.item-total").on('click', function() {
+			var type = "price";
+			if ($(this).hasClass('item-name')) {
+				type = 'name';
+			} else if ($(this).hasClass('item-qty')) {
+				type = 'qty';
+			} else if ($(this).hasClass('item-total')) {
+				type = 'total';
+			} else if ($(this).hasClass('item-price')) {
+				type = 'price';
+			}
+
+			if ($(this).hasClass('ion-arrow-down-b')) {
+				invoice_receipt_item_sort(this, type, 'up');
+			} else if ($(this).hasClass('ion-arrow-up-b')) {
+				invoice_receipt_item_sort(this, type, 'down');
+			} else {
+				invoice_receipt_item_sort(this, type, 'down');
+			}
+		});
+
+	});
+
+	$('#print_duplicate_receipt').click(function() {
+		if ($('#print_duplicate_receipt').prop('checked')) {
+			var receipt = $('#receipt_wrapper').clone();
+			$('#duplicate_receipt_holder').html(receipt);
+			$("#duplicate_receipt_holder").addClass('visible-print-block');
+			$("#duplicate_receipt_holder #signature_holder").addClass('hidden');
+			$("#duplicate_receipt_holder .receipt_type_label").text("Duplicate receipt");
+			$(".receipt_type_label").show();
+			$(".receipt_type_label").addClass('show_receipt_labels');
+		} else {
+			$("#duplicate_receipt_holder").empty();
+			$("#duplicate_receipt_holder").removeClass('visible-print-block');
+			$("#duplicate_receipt_holder #signature_holder").removeClass('hidden');
+			$(".receipt_type_label").hide();
+			$(".receipt_type_label").removeClass('show_receipt_labels');
+		}
+	});
+
+	
+	
+	function print_receipt() {
+		window.print();
+	}
+
+	function toggle_gift_receipt() {
+		var gift_receipt_text = "Gift Receipt";
+		var regular_receipt_text = "Regular Receipt";
+
+		if ($("#gift_receipt_button").hasClass('regular_receipt')) {
+			$('#gift_receipt_button').addClass('gift_receipt');
+			$('#gift_receipt_button').removeClass('regular_receipt');
+			$("#gift_receipt_button").text(gift_receipt_text);
+			$('.gift_receipt_element').show();
+		} else {
+			$('#gift_receipt_button').removeClass('gift_receipt');
+			$('#gift_receipt_button').addClass('regular_receipt');
+			$("#gift_receipt_button").text(regular_receipt_text);
+			$('.gift_receipt_element').hide();
+		}
+
+	}
+
+	//timer for sig refresh
+	var refresh_timer;
+	var sig_canvas = document.getElementById('sig_cnv');
+
+		$("#capture_digital_sig_button").click(function() {
+					try {
+				if (TabletConnectQuery() == 0) {
+					bootbox.alert("Unable to connect to signature pad; please verify it is installed correctly and plugged in");
+					return;
+				}
+			} catch (exception) {
+				bootbox.alert("Unable to connect to signature pad; please verify it is installed correctly and plugged in");
+				return;
+			}
+
+			var ctx = document.getElementById('sig_cnv').getContext('2d');
+			SigWebSetDisplayTarget(ctx);
+			SetDisplayXSize(500);
+			SetDisplayYSize(100);
+			SetJustifyMode(0);
+			refresh_timer = SetTabletState(1, ctx, 50);
+			KeyPadClearHotSpotList();
+			ClearSigWindow(1);
+			ClearTablet();
+		
+		$("#capture_digital_sig_button").hide();
+		$("#digital_sig_holder").show();
+	});
+
+	$("#capture_digital_sig_clear_button").click(function() {
+					ClearTablet();
+			});
+
+	$("#capture_digital_sig_done_button").click(function() {
+					if (NumberOfTabletPoints() == 0) {
+				bootbox.alert("No signature captured, please try again");
+			} else {
+				SetTabletState(0, refresh_timer);
+				//RETURN TOPAZ-FORMAT SIGSTRING
+				SetSigCompressionMode(1);
+				var sig = GetSigString();
+
+				//RETURN BMP BYTE ARRAY CONVERTED TO BASE64 STRING
+				SetImageXSize(500);
+				SetImageYSize(100);
+				SetImagePenWidth(5);
+				GetSigImageB64(SigImageCallback);
+				$("#capture_digital_sig_button").show();
+			}
+			});
+
+	function SigImageCallback(str) {
+		$("#digital_sig_holder").hide();
+		$.post('https://pos4africa.ng/fahadtahir/index.php/sales/sig_save', {
+			sale_id: "15747",
+			image: str
+		}, function(response) {
+			$("#signature_holder").empty();
+			$("#signature_holder").append('<img src="' + SITE_URL + '/app_files/view_cacheable/' + response.file_id + '?timestamp=' + response.file_timestamp + '" width="250" />');
+		}, 'json');
+
+	}
+
+	
+	</script>
+
+
+<script>
+	html2canvas(document.querySelector("#receipt_wrapper"), {
+		height: $("#receipt_wrapper").height(),
+		windowWidth: 280,
+		onclone: function(doc) {
+			doc.querySelector('#invoice-policy-return').style.display = 'none';
+			doc.querySelector('#invoice-policy-return-mobile').style.display = 'block';
+
+			doc.querySelector('#announcement').style.display = 'none';
+			doc.querySelector('#announcement-mobile').style.display = 'block';
+
+			doc.querySelector('.remove_when_mobile').style.display = 'none';
+			doc.querySelector('.keep_when_mobile').style.display = 'block';
+
+
+
+			doc.querySelectorAll('.invoice-table-content').forEach(function(item) {
+				item.style.borderBottom = 'none';
+			});
+
+
+			doc.querySelectorAll('.receipt-row-item-holder').forEach(function(item) {
+				item.style.clear = 'both';
+			});
+
+			if ($("#capture_digital_sig_button").length) {
+				doc.querySelector('#capture_digital_sig_button').style.display = 'none';
+			}
+
+		}
+	}).then(canvas => {
+		document.getElementById("print_image_output").innerHTML = canvas.toDataURL();
+	});
+</script>
+<script type="text/print-image" id="print_image_output"></script>
+<!-- This is used for mobile apps to print receipt-->
+<script type="text/print" id="print_output">TAHIR GENERAL MERCHANT
+123 Nowhere street
+555-555-5555
+
+Sales Receipt
+03/16/2026 05:05 pm
+Customer: Abba Tahir Shop 	
+
+Sale ID: FAHAD 15747	
+BB	
+
+Item            Price Qty. Total
+---------------------------------------
+HOLLANTEX      ₦12,000.00 1 ₦12,000.00
+    	
+
+
+Sub Total: ₦12,000.00
+
+
+Total: ₦12,000.00
+Number of items sold: 1
+
+03/16/2026 05:05 pm  ACCESS BANK ₦12,000.00
+	
+Change Due: ₦0.00
+
+Customer Account Balance: ₦126,500.00RAHAMA S FULANI
+Change return policy</script>
+<div id="footers" class="col-md-12 hidden-print text-center">
+    Please visit our    <a tabindex="-1" href="http://pos4africa.ng" target="_blank">Website</a> 
+    to learn the latest information about the project.
+
+    <span class="text-info">
+         
+        <span class="badge bg-primary">19.0</span>
+    </span> 
+    Built on 10/19/2022 10:40 am EST    
+    <!-- Contact Information -->
+    <div class="text-contact">
+        <p>Contact: <a href="">08166795774</a></p>
+		<a href="https://wa.me/2348166795774" target="_blank">Chat on WhatsApp</a>
+
+    </div>
+</div>
+	<!---content -->
+</div> <!-- wrapper -->
+</body>
+	<script>
+		function getBodyScrollTop() {
+			var el = document.scrollingElement || document.documentElement;
+
+			return el.scrollTop;
+		}
+
+		$(window).on("beforeunload", function() {
+
+			var scroll_top =
+				$.ajax("https:\/\/pos4africa.ng\/fahadtahir\/index.php\/home\/save_scroll", {
+					async: false,
+					data: {
+						scroll_to: getBodyScrollTop()
+					}
+				});
+		});
+	</script>
+	
+<script>
+	async function delete_all_client_side_dbs()
+	{
+		//If we can list out all datbases this is the best method in case we are in an odd state
+		//Supports chrome, safari
+		if (window.indexedDB.databases)
+		{
+			 window.indexedDB.databases().then((r) => 
+			 {
+			     for (var i = 0; i < r.length; i++)
+		         {
+		             window.indexedDB.deleteDatabase(r[i].name);     
+		         } 
+			 })
+		}
+		else //For firefox
+		{
+			try
+			{
+	 			var phppos_customers = new PouchDB('phppos_customers',{revs_limit: 1});
+	 			var phppos_items = new PouchDB('phppos_items',{revs_limit: 1});
+				var phppos_settings = new PouchDB('phppos_settings',{revs_limit: 1});
+				await phppos_customers.destroy();
+				await phppos_items.destroy();
+				await phppos_settings.destroy();
+			}
+			catch(exception_var)
+			{
+				
+			}
+		}
+		
+	}
+</script>
+
+</html>

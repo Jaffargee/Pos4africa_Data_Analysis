@@ -19,7 +19,7 @@ import asyncio
 import time
 from enum import StrEnum
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading
 from dataclasses import dataclass, field
 from typing import List, Dict, Callable, Optional
@@ -113,12 +113,31 @@ class CircuitBreakerConfig:
                   if hasattr(self, key):
                         setattr(self, key, value)
 
-class CircuitBreaker:
+                  
+class CircuitBreakerRegistry:
       def __init__(self, config: CircuitBreakerConfig | None = None) -> None:
             self._config = config or CircuitBreakerConfig()
+            self._instances: dict[str, CircuitBreaker] = {}
+            
+      def configure(self, config: CircuitBreakerConfig) -> None:
+            self._config = config
+            
+      def get_circuit_breaker(self, name: str) -> CircuitBreaker:
+            if name not in self._instances:
+                  self._instances[name] = CircuitBreaker(name=name, config=self._config)
+            return self._instances[name]
+      
+      def get(self, name: str) -> CircuitBreaker:
+            return self.get_circuit_breaker(name)
+
+class CircuitBreaker:
+      def __init__(self, name: str, config: CircuitBreakerConfig | None = None) -> None:
+            self.name = name
+            self._config = config or CircuitBreakerConfig()
+            self.log = get_logger(f"CircuitBreaker[{id(self)}]")
             
             # State management
-            self._state = CircuitBreakerState.CLOSED
+            self._state = CBState.CLOSED
             self._last_state_change = datetime.now()
             self._lock = threading.RLock()
             
@@ -138,7 +157,7 @@ class CircuitBreaker:
             with self._lock:
                   return self._state
             
-      def _record_failure(self, error: Optional[Exception] = None) -> None:
+      async def _record_failure(self, error: Optional[Exception] = None) -> None:
             now = datetime.now()
             with self._lock:
                   self._failures.append(now)
@@ -160,8 +179,10 @@ class CircuitBreaker:
                   if total > 0:
                         self.metrics.current_failure_rate = len(self._failures) / total
                         
+                  if self._config.on_failure:
+                        self._trigger_callback(self._config.on_failure, error)
                         
-      def _record_success(self) -> None:
+      async def _record_success(self) -> None:
             now = datetime.now()
             with self._lock:
                   self._successes.append(now)
@@ -181,118 +202,156 @@ class CircuitBreaker:
                   total = len(self._failures) + len(self._successes)
                   if total > 0:
                         self.metrics.current_failure_rate = len(self._failures) / total
+                        
+                  if self._config.on_success:
+                        self._trigger_callback(self._config.on_success)
       
       def _should_open(self) -> bool:
             """Determine if circuit should open"""
             with self._lock:
-                  if self._state == CircuitBreakerState.FORCED_OPEN: return True
-                  if self._state == CircuitBreakerState.FORCED_CLOSED: return False
-                  if self._state == CircuitBreakerState.DISABLED: return False
-                  
+                  if self._state == CBState.FORCED_OPEN: return True
+                  if self._state == CBState.FORCED_CLOSED: return False
+                  if self._state == CBState.DISABLED: return False
+
                   # Check if we have enough failures
-                  if len(self._failures) >= self.failure_threshold: return True
+                  if len(self._failures) >= self._config.failure_threshold: return True
                   
                   # Check failure rate
                   total = len(self._failures) + len(self._successes)
-                  if total >= self.rolling_window_size:
+                  if total >= self._config.rolling_window:
                         failure_rate = len(self._failures) / total
                         if failure_rate >= 0.5:  # 50% failure rate threshold
                               return True
                               
                   return False
+                     
+      def _should_attempt_recovery(self) -> bool:
+            """Check if it's time to attempt recovery"""
+            with self._lock:
+                  if self._state != CBState.OPEN:
+                        return False
+
+                  time_open = (datetime.now() - self._last_state_change).total_seconds()
+                  return time_open >= self._config.recovery_timeout
+
+      def _should_close(self) -> bool:
+            """Determine if circuit should close"""
+            with self._lock:
+                  if self._state != CBState.HALF_OPEN:
+                        return False
+
+                  return self._half_open_successes >= self._config.half_open_success_threshold
             
-class CircuitBreakerRegistry:
-      def __init__(self, config: CircuitBreakerConfig | None = None) -> None:
-            self._config = config or CircuitBreakerConfig()
-            self._instances: dict[str, CircuitBreaker] = {}
-            
-      def configure(self, config: CircuitBreakerConfig) -> None:
-            self._config = config
-            
-      def get_circuit_breaker(self, name: str) -> CircuitBreaker:
-            if name not in self._instances:
-                  self._instances[name] = CircuitBreaker(config=self._config)
-            return self._instances[name]
+      def _change_state(self, new_state: CBState) -> None:
+            with self._lock:
+                  old_state = self._state
+                  
+                  if old_state == new_state:
+                        return  # no change
+                  
+                  if self.new_state == CBState.HALF_OPEN:
+                        self._half_open_calls = 0
+                        self._half_open_successes = 0
+                  
+                  self._state = new_state
+                  self._last_state_change = datetime.now()
+                  
+                  self.metrics.state_changes.append({
+                        'from': old_state.value,
+                        'to': new_state.value,
+                        'timestamp': self._last_state_change.isoformat()
+                  })
+                  
+                  self.log.warning(
+                        "circuit_breaker.state_changed",
+                        from_state=old_state.value,
+                        to_state=new_state.value,
+                        timestamp=self._last_state_change.isoformat()
+                  )
+                  
+      def _trigger_callback(self, callback: Callable, *args, **kwargs) -> None:
+            """Safely trigger callback"""
+            try:
+                  callback(*args, **kwargs)
+            except Exception as e:
+                  self.log.error(f"Error in callback: {e}")
+                  
+      def force_open(self) -> None:
+            """Force circuit breaker to open state"""
+            with self._lock:
+                  self._change_state(CBState.FORCED_OPEN)
       
-      def get(self, name: str) -> CircuitBreaker:
-            return self.get_circuit_breaker(name)
+      def force_close(self) -> None:
+            """Force circuit breaker to closed state"""
+            with self._lock:
+                  self._change_state(CBState.FORCED_CLOSED)
       
+      def disable(self) -> None:
+            """Disable circuit breaker"""
+            with self._lock:
+                  self._change_state(CBState.DISABLED)
       
+      def reset(self) -> None:
+            """Reset circuit breaker to closed state"""
+            with self._lock:
+                  self._failures.clear()
+                  self._successes.clear()
+                  self._half_open_calls = 0
+                  self._half_open_successes = 0
+                  self._change_state(CBState.CLOSED)
       
+      def get_metrics(self) -> Dict:
+            """Get circuit breaker metrics"""
+            with self._lock:
+                  return {
+                        'name': self.name,
+                        'state': self._state.value,
+                        'metrics': self.metrics.to_dict(),
+                        'failures_in_window': len(self._failures),
+                        'successes_in_window': len(self._successes),
+                        'last_state_change': self._last_state_change.isoformat(),
+                        'half_open_calls': self._half_open_calls,
+                        'half_open_successes': self._half_open_successes
+                  }
+                  
+      async def __aenter__(self) -> "CircuitBreaker":
+            with self._lock:
+                  if self._state == CBState.OPEN:
+                        if self._should_attempt_recovery():
+                              self._change_state(CBState.HALF_OPEN)
+                        else:
+                              self.metrics.rejected_calls += 1
+                              raise CircuitBreakerOpenError(
+                                    f"Circuit is OPEN. Retry after {self._config.recovery_timeout}s"
+                              )
+            return self
       
-      
-      
-      
-
-# class CBState(StrEnum):
-#       CLOSED = "closed"
-#       OPEN = "open"
-#       HALF_OPEN = "half_open"
-
-
-# class CircuitBreakerOpen(Exception):
-#       """Raised when a call is attempted while the circuit is OPEN."""
-
-
-# class CircuitBreaker:
-#       def __init__(self, name: str, failure_threshold: int | None = None, recovery_timeout: float | None = None) -> None:
-#             self.name = name
-#             self._threshold = failure_threshold or settings.cb_failure_threshold
-#             self._recovery_timeout = recovery_timeout or settings.cb_recovery_timeout
-
-#             self._state = CBState.CLOSED
-#             self._failure_count = 0
-#             self._opened_at: float | None = None
-#             self._lock = asyncio.Lock()
-
-#       @property
-#       def state(self) -> CBState:
-#             return self._state
-
-#       async def __aenter__(self) -> "CircuitBreaker":
-#             async with self._lock:
-#                   if self._state == CBState.OPEN:
-#                         elapsed = time.monotonic() - (self._opened_at or 0)
-#                         if elapsed >= self._recovery_timeout:
-#                               log.info("circuit_breaker.half_open", name=self.name)
-#                               self._state = CBState.HALF_OPEN
-#                   else:0
-#                         raise CircuitBreakerOpen(
-#                               f"Circuit '{self.name}' is OPEN. "
-#                               f"Retry in {self._recovery_timeout - elapsed:.1f}s"
-#                         )
-#             return self
-
-#       async def __aexit__(
-#             self,
-#             exc_type: type[BaseException] | None,
-#             exc_val: BaseException | None,
-#             exc_tb: object,
-#       ) -> bool:
-#             async with self._lock:
-#                   if exc_type is not None and exc_type is not CircuitBreakerOpen:
-#                         await self._on_failure()
-#                   else:
-#                         await self._on_success()
-#             return False  # don't suppress exceptions
-
-#       async def _on_failure(self) -> None:
-#             self._failure_count += 1
-#             log.warning(
-#                   "circuit_breaker.failure",
-#                   name=self.name,
-#                   count=self._failure_count,
-#                   threshold=self._threshold,
-#             )
-#             if self._failure_count >= self._threshold:
-#                   self._state = CBState.OPEN
-#                   self._opened_at = time.monotonic()
-#                   log.error("circuit_breaker.opened", name=self.name)
-
-#       async def _on_success(self) -> None:
-#             if self._state in (CBState.HALF_OPEN, CBState.OPEN):
-#                   log.info("circuit_breaker.closed", name=self.name)
-#             self._state = CBState.CLOSED
-#             self._failure_count = 0
-#             self._opened_at = None
-
+      async def __aexit__(
+            self,
+            exc_type: Optional[type[BaseException]],
+            exc_val: Optional[BaseException],
+            exc_tb: Optional[object]
+      ) -> bool:
+            with self._lock:
+                  if exc_type is None:
+                        await self._record_success()
+                        if self._state == CBState.HALF_OPEN and self._should_close():
+                              self._change_state(CBState.CLOSED)
+                              if self._config.on_state_change: self._trigger_callback(self._config.on_state_change, CBState.CLOSED)
+                        else:
+                              if self._config.on_success: self._trigger_callback(self._config.on_success)
+                  else:
+                        if exc_type in self._config.exclude_exceptions:
+                              await self._record_success()
+                              return False  # don't suppress
+                        if self._config.include_exceptions and exc_type not in self._config.include_exceptions:
+                              await self._record_success()
+                              return False  # don't suppress
+                              
+                        await self._record_failure(exc_val)
+                        if self._should_open():
+                              self._change_state(CBState.OPEN)
+                              if self._config.on_state_change: self._trigger_callback(self._config.on_state_change, CBState.OPEN)
+                        else:
+                              if self._config.on_failure: self._trigger_callback(self._config.on_failure, exc_val)
+                  

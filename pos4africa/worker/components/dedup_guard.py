@@ -10,8 +10,8 @@ class DedupGuard(BaseComponent):
             super().__init__(node_id, memory)
             self._skipped = 0
             
-      async def run(self, pos_sale_id: str) -> bool:
-            fp = sale_fingerprint(pos_sale_id=pos_sale_id)
+      async def run(self, pos_sale_id: int) -> bool:
+            fp = sale_fingerprint(pos_sale_id=str(pos_sale_id))
             is_dup = await self.memory.ltm.is_duplicate(fp)
             
             if is_dup:

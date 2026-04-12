@@ -1,0 +1,1499 @@
+
+<!DOCTYPE html>
+<html class="english">
+<head>
+	<meta charset="UTF-8" />
+    <title>TAHIR GENERAL MERCHANT -- Powered By POS4AFRICA Point Of Sale</title>
+	<link rel="icon" href="https://fahadtahir.pos4africa.com/favicon.ico" type="image/x-icon"/>	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> <!--320-->
+	<base href="https://fahadtahir.pos4africa.com/" />
+	
+	<link rel="icon" href="https://fahadtahir.pos4africa.com/favicon.ico" type="image/x-icon"/>
+	<script type="text/javascript">
+		
+		var SITE_URL= "https://fahadtahir.pos4africa.com/index.php";
+		var BASE_URL= "https://fahadtahir.pos4africa.com/";
+		var ENABLE_SOUNDS = false;
+		var JS_DATE_FORMAT = "MM\/DD\/YYYY";
+		var JS_TIME_FORMAT = "hh:mm a";
+		var LOCALE =  "en";
+		var MONEY_NUM_DECIMALS = 2;
+		var IS_MOBILE = false;
+		var ENABLE_QUICK_EDIT = false;
+	</script>
+			<link rel="stylesheet" type="text/css" href="https://fahadtahir.pos4africa.com/assets/css_phppointofsale/all.css?1740892121" />
+				<script src="https://fahadtahir.pos4africa.com/assets/js/all.js?1740892121" type="text/javascript" charset="UTF-8"></script>
+		<script type="text/javascript">
+		var SCREEN_WIDTH = $(window).width();
+		var SCREEN_HEIGHT = $(window).height();
+		COMMON_SUCCESS = "Success";
+		COMMON_ERROR = "Error";
+		
+		bootbox.addLocale('ar', {
+		    OK : 'حسنا',
+		    CANCEL : 'إلغاء',
+		    CONFIRM : 'تأكيد'			
+		});
+		
+		bootbox.addLocale('km', {
+		    OK :'យល់ព្រម',
+		    CANCEL : 'បោះបង់',
+		    CONFIRM : 'បញ្ជាក់ការ'			
+		});
+		bootbox.setLocale(LOCALE);
+		$.ajaxSetup ({
+			cache: false,
+			headers: { "cache-control": "no-cache" }
+		});
+		
+		$(document).on('show.bs.modal','.bootbox.modal', function (e) 
+		{
+			var isShown = ($(".bootbox.modal").data('bs.modal') || {}).isShown;
+			//If we have a dialog already don't open another one
+			if (isShown)
+			{
+				//Cleanup the dialog(s) that was added to dom
+				$('.bootbox.modal:not(:first)').remove();
+				
+				//Prevent double modal from showing up
+				return e.preventDefault();
+			}
+		});
+		
+		
+		toastr.options = {
+		  "closeButton": true,
+		  "debug": false,
+		  "newestOnTop": false,
+		  "progressBar": false,
+		  "positionClass": "toast-top-right",
+		  "preventDuplicates": false,
+		  "onclick": null,
+		  "showDuration": "300",
+		  "hideDuration": "1000",
+		  "timeOut": "5000",
+		  "extendedTimeOut": "1000",
+		  "showEasing": "swing",
+		  "hideEasing": "linear",
+		  "showMethod": "fadeIn",
+		  "hideMethod": "fadeOut"
+		}
+		
+    $.fn.editableform.buttons = 
+      '<button tabindex="-1" type="submit" class="btn btn-primary btn-sm editable-submit">'+
+        '<i class="icon ti-check"></i>'+
+      '</button>'+
+      '<button tabindex="-1" type="button" class="btn btn-default btn-sm editable-cancel">'+
+        '<i class="icon ti-close"></i>'+
+      '</button>';
+	  
+ 	  $.fn.editable.defaults.emptytext = "Empty";
+		
+		$(document).ready(function()
+		{
+			$(".wrapper.mini-bar .left-bar").hover(
+			   function() {
+			     $(this).parent().removeClass('mini-bar');
+			   }, function() {
+			     $(this).parent().addClass('mini-bar');
+			   }
+			 );
+
+		    $('.menu-bar').click(function(e){                  
+		    	e.preventDefault();
+		        $(".wrapper").toggleClass('mini-bar');        
+		    }); 
+    					
+			//Ajax submit current location
+			$(".set_employee_current_location_id").on('click',function(e)
+			{
+				e.preventDefault();
+
+				var location_id = $(this).data('location-id');
+				$.ajax({
+				    type: 'POST',
+				    url: 'https://fahadtahir.pos4africa.com/index.php/home/set_employee_current_location_id',
+				    data: { 
+				        'employee_current_location_id': location_id, 
+				    },
+				    success: function(){
+				    	window.location.reload(true);	
+				    }
+				});
+				
+			});
+			
+			$(".set_employee_language").on('click',function(e)
+			{
+				e.preventDefault();
+
+				var language_id = $(this).data('language-id');
+				$.ajax({
+				    type: 'POST',
+				    url: 'https://fahadtahir.pos4africa.com/index.php/employees/set_language',
+				    data: { 
+				        'employee_language_id': language_id, 
+				    },
+				    success: function(){
+				    	window.location.reload(true);	
+				    }
+				});
+				
+			});
+			
+								//Keep session alive by sending a request every 5 minutes
+					setInterval(function(){$.get('https://fahadtahir.pos4africa.com/index.php/home/keep_alive');}, 300000);
+										});
+	</script>
+</head>
+<body>
+	<div class="modal fade hidden-print" id="myModal" tabindex="-1" role="dialog" aria-hidden="true"></div>
+	<div class="modal fade hidden-print" id="myModalDisableClose" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static"></div>
+	
+	<div class="wrapper mini-bar sales-bar">
+		<div class="left-bar hidden-print" >
+			<div class="admin-logo" style="">
+				<div class="logo-holder pull-left">
+					<img src="https://fahadtahir.pos4africa.com/assets/img/header_logo.png" class="hidden-print logo" id="header-logo" alt="" />				</div>
+				<!-- logo-holder -->
+							
+			</div>
+			<!-- admin-logo -->
+
+			<ul class="list-unstyled menu-parent" id="mainMenu">
+			
+				
+				<li  class="home">
+					<a tabindex = "-1" href="https://fahadtahir.pos4africa.com/index.php/home" class="waves-effect waves-light">
+						<i class="icon ti-dashboard"></i>
+						<span class="text">Dashboard</span>
+					</a></li>
+									<li class="reports">
+						<a tabindex = "-1" href="https://fahadtahir.pos4africa.com/index.php/reports"  class="waves-effect waves-light">
+							<i class="icon ti-icon ti-bar-chart"></i>
+							<span class="text">Reports</span>
+						</a>
+					</li>
+									<li class="active sales">
+						<a tabindex = "-1" href="https://fahadtahir.pos4africa.com/index.php/sales"  class="waves-effect waves-light">
+							<i class="icon ti-icon ti-shopping-cart"></i>
+							<span class="text">Sales</span>
+						</a>
+					</li>
+												
+                <li>
+					<a href="https://fahadtahir.pos4africa.com/index.php/home/logout" tabindex="-1"><i class="icon ti-power-off"></i><span class="text">Logout</span></a>
+                </li>
+			</ul>
+		</div>
+		<!-- left-bar -->
+
+		<div class="content" id="content">
+					<div class="overlay hidden-print"></div>			
+			<div class="top-bar hidden-print">				
+				<nav class="navbar navbar-default top-bar">
+					<div class="menu-bar-mobile" id="open-left"><i class="ti-menu"></i></div>
+					<div class="nav navbar-nav top-elements navbar-breadcrumb hidden-xs">
+						 <a  tabindex="-1"  href="https://fahadtahir.pos4africa.com/index.php/home">Dashboard</a><a tabindex = "-1" href="https://fahadtahir.pos4africa.com/index.php/sales">Sales</a><a tabindex = "-1" class="current" href="https://fahadtahir.pos4africa.com/index.php/sales/receipt/1">Sales Receipt</a>					</div>	
+
+					<ul class="nav navbar-nav navbar-right top-elements">															
+																																	
+						
+
+						
+						<li class="dropdown">
+							<a tabindex = "-1" href="#" class="dropdown-toggle avatar_width" data-toggle="dropdown" role="button" aria-expanded="false"><span class="avatar-holder">
+
+							<img src="https://fahadtahir.pos4africa.com/assets/assets/images/avatar-default.jpg" alt="" /></span>
+
+							<span class="avatar_info visible-md visible-lg">BB </span></a>
+							<ul class="dropdown-menu user-dropdown animated fadeInUp wow avatar_drop neat_drop" data-wow-duration="1500ms"  role="menu">
+							<li>
+									<a tabindex = "-1" id="support_link" target="_blank" href="http://POS4AFRICA.com/"><i class="ion-help-buoy"></i><span class="text">Support/Documentation</span></a>									
+							</li>
+							
+																
+																<li>
+									<a tabindex = "-1" id="switch_user" href="https://fahadtahir.pos4africa.com/index.php/login/switch_user/0" data-toggle="modal" data-target="#myModalDisableClose"><i class="ion-ios-toggle-outline"></i><span class="text">Switch User</span></a>
+								</li>
+																								
+								<li>
+								<a href="https://fahadtahir.pos4africa.com/index.php/home/logout" class="logout_button" tabindex="-1"><i class="ion-power"></i><span class="text">Logout</span></a>								</li>			
+							</ul>
+						</li>							
+					</ul>
+				</nav>
+			</div>
+			<!-- top-bar -->
+			<div class="main-content">
+
+
+
+<script>
+(function() {
+  var cachedFile = null;
+  var downloadUrl = "https:\/\/fahadtahir.pos4africa.com\/index.php\/sales\/download_receipt\/1";
+  var fileName = 'receipt-TAHIR 1.pdf';
+  var company = "TAHIR GENERAL MERCHANT";
+
+  // Pre-fetch the PDF in the background so it's ready when user clicks Share
+  fetch(downloadUrl).then(function(r) {
+    if (!r.ok) throw new Error('fetch failed');
+    return r.blob();
+  }).then(function(blob) {
+    try {
+      cachedFile = new File([blob], fileName, { type: 'application/pdf' });
+    } catch(e) {
+      cachedFile = null;
+    }
+  }).catch(function() { cachedFile = null; });
+
+  window.share_receipt = function() {
+    var btn = document.getElementById('share_receipt_file_button');
+
+    // If we have a cached file and browser supports sharing files, share directly
+    if (cachedFile && navigator.share && navigator.canShare && navigator.canShare({ files: [cachedFile] })) {
+      if (btn) btn.disabled = true;
+      navigator.share({
+        title: 'Receipt from ' + company,
+        text: 'Here is your receipt from ' + company + '.',
+        files: [cachedFile]
+      }).catch(function(){}).finally(function() {
+        if (btn) btn.disabled = false;
+      });
+    } else {
+      // Fallback: open WhatsApp with download link
+      var waMsg = 'Your receipt from ' + company + ':\n' + downloadUrl;
+      window.open('https://wa.me/?text=' + encodeURIComponent(waMsg), '_blank');
+    }
+  };
+})();
+</script>
+
+<!-- Css Loader  -->
+<div class="spinner hidden" id="ajax-loader" style="width:100vw;  height:100vh;">
+	<div class="rect1"></div>
+	<div class="rect2"></div>
+	<div class="rect3"></div>
+</div>
+
+<script type="text/javascript">
+function print_receipt() {
+	window.print();
+}
+
+function toggle_gift_receipt() {
+	var gift_receipt_text = "Gift Receipt";
+	var regular_receipt_text = "Regular Receipt";
+	
+	if ($("#gift_receipt_button").hasClass('regular_receipt')) {
+		$('#gift_receipt_button').addClass('gift_receipt');
+		$('#gift_receipt_button').removeClass('regular_receipt');
+		$("#gift_receipt_button").text(gift_receipt_text);
+		$('.gift_receipt_element').show();
+	} else {
+		$('#gift_receipt_button').removeClass('gift_receipt');
+		$('#gift_receipt_button').addClass('regular_receipt');
+		$("#gift_receipt_button").text(regular_receipt_text);
+		$('.gift_receipt_element').hide();
+	}
+}
+</script>
+
+	<div class="manage_buttons hidden-print">
+
+		<div class="row">
+			<div class="col-md-6">
+				<div class="hidden-print search no-left-border">
+					<ul class="list-inline print-buttons">
+						<li></li>
+						
+						<li>
+							<button class="btn btn-primary btn-lg hidden-print" id="verify_receipt_button"> Verify </button>
+						</li>
+						
+													<li>
+								<form action="https://fahadtahir.pos4africa.com/index.php/sales/change_sale/1" id="sales_change_form" method="post" accept-charset="utf-8">
+									<button class="btn btn-primary btn-lg hidden-print" id="edit_sale"> Edit </button>
+
+																</form>
+							</li>
+						
+													<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="fufillment_sheet_button" onclick="window.open('https://fahadtahir.pos4africa.com/index.php/sales/fulfillment/1', 'blank');"> Fulfillment Sheet</button>
+							</li>
+						
+						<li>
+							<button class="btn btn-primary btn-lg hidden-print gift_receipt" id="gift_receipt_button" onclick="toggle_gift_receipt()"> Gift Receipt </button>
+						</li>
+						
+												
+                        <li>
+                            <button class="btn btn-success btn-lg hidden-print" id="share_receipt_file_button" onclick="window.share_receipt && window.share_receipt()">
+                                <span class="ion-android-share-alt"></span> Share
+                            </button>
+                        </li>
+                        <!-- END: REPLACEMENT SHARE BUTTON -->
+
+													<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="fufillment_sheet_button" onclick="window.open('https://fahadtahir.pos4africa.com/index.php/sales/create_po/1', 'blank');"> Create PO</button>
+							</li>
+						
+													<li>
+								<a href="https://fahadtahir.pos4africa.com/index.php/sales/download_receipt/1" id="download_pdf" class="btn btn-primary btn-lg hidden-print"><span class="ion-arrow-down-a"></span></a>							</li>
+															<li>
+									<br />
+									<a href="https://fahadtahir.pos4africa.com/index.php/sales/clone_sale/1" id="clone" class="btn btn-primary btn-lg hidden-print">Clone</a>								</li>
+													
+													<li>
+								<a href="https://fahadtahir.pos4africa.com/index.php/sales/return_order/1" id="return_order" class="btn btn-primary btn-lg hidden-print">Return</a>							</li>
+											</ul>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="buttons-list">
+					<div class="pull-right-btn">
+						<ul class="list-inline print-buttons">
+							<li>
+								<input type="checkbox" name="print_duplicate_receipt" value="1" id="print_duplicate_receipt"  />
+&nbsp;<label for="print_duplicate_receipt"><span></span>Duplicate receipt</label>							</li>
+							<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="print_button" onclick="print_receipt()"> Print </button>
+							</li>
+														<li>
+								<a href="https://fahadtahir.pos4africa.com/index.php/sales/open_drawer" onclick="window.open('https://fahadtahir.pos4africa.com/index.php/sales/open_drawer', '_blank', 'width=800,height=600,scrollbars=yes,menubar=no,status=yes,resizable=yes,screenx=0,screeny=0'); return false;" class="btn btn-primary btn-lg hidden-print" target="_blank"><i class="ion-android-open"></i> Pop Open Cash Drawer</a>							</li>
+														<li>
+								<button class="btn btn-primary btn-lg hidden-print" id="new_sale_button_1" onclick="window.location='https://fahadtahir.pos4africa.com/index.php/sales'"> New Sale </button>
+							</li>
+
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+<div class="row manage-table receipt_small" id="receipt_wrapper">
+	<div class="col-md-12" id="receipt_wrapper_inner">
+		<div class="panel panel-piluku">
+			<div class="panel-body panel-pad">
+				<div class="row">
+					<!-- from address-->
+					<div class="col-md-4 col-sm-4 col-xs-12">
+						<ul class="list-unstyled invoice-address" style="margin-bottom:2px;">
+							
+															<li class="company-title">TAHIR GENERAL MERCHANT</li>
+							
+							<li class="nl2br">NEW ALARAMMA HOUSE IBB WAY</li>
+							<li>08155445454, 08093336468, 08083765442</li>
+							
+																				</ul>
+					</div>
+					<!--  sales-->
+					<div class="col-md-4 col-sm-4 col-xs-12">
+						<ul class="list-unstyled invoice-detail" style="margin-bottom:2px;">
+							<li>
+																	<span style="font-size: 130%;font-weight: bold;">Sales Receipt</span>
+									<br>
+																<strong>03/31/2026 12:29 pm</strong>
+							</li>
+
+
+
+															<li class="remove_when_mobile"><span>Sale ID:</span><a href="https://fahadtahir.pos4africa.com/index.php/r/M6?signature=5784ba6f2d945abf96c247a12456a8b57ae1af4b">S1</a>								<li class="keep_when_mobile" style="display: none"><span>Sale ID:</span>S1
+																</li>
+								
+																
+																
+								
+								
+								
+																	<li><span>Employee:</span>BB </li>
+															</ul>
+					</div>
+					<!-- to address-->
+					<div class="col-md-4 col-sm-4 col-xs-12">
+
+													<ul class="list-unstyled invoice-address invoiceto" style="margin-bottom:2px;">
+
+																	<li class="invoice-to">Bill To:</li>
+									<li>Customer: Tahir Indoor And Outdoor Customers  </li>
+
+								
+								
+																									
+																																																																																
+															</ul>
+											</div>
+
+					<!-- delivery address-->
+					<div class="col-md-12 col-sm-12 col-xs-12">
+
+						
+											</div>
+
+				</div>
+				
+				<table style="width:100%;" id='receipt-draggable'>
+					<thead>
+						<tr>
+							<!-- invoice heading-->
+							<th class="invoice-table">
+								<div class="row">
+									<div class="col-md-12 col-sm-12 col-xs-12">
+										<div class="invoice-head item-name">Item Name</div>
+									</div>
+									<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+										<div class="invoice-head text-right item-price">
+											Price										</div>
+									</div>
+									<div class="col-md-4 col-sm-4 col-xs-4">
+										<div class="invoice-head text-right item-qty">Qty.</div>
+									</div>
+
+																		<div class="col-md-4 col-sm-4 col-xs-4">
+										<div class="invoice-head pull-right item-total gift_receipt_element">Total</div>
+									</div>
+
+								</div>
+							</th>
+						</tr>
+					</thead>
+											<tbody data-line="5" data-sale-id="1" data-item-id="153" data-item-name="LAGOS LACE F" data-item-qty="2.0000000000" data-item-price="17000" data-item-total="34000" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													LAGOS LACE F												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc" style="max-width: 30%;">
+																									</div>
+
+																																			</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦17,000.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												2
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦34,000.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+											<tbody data-line="4" data-sale-id="1" data-item-id="116" data-item-name="MEDIUM GLITTER" data-item-qty="2.0000000000" data-item-price="17000" data-item-total="34000" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													MEDIUM GLITTER												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc" style="max-width: 30%;">
+																									</div>
+
+																																			</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦17,000.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												2
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦34,000.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+											<tbody data-line="3" data-sale-id="1" data-item-id="117" data-item-name="EMBELLISHED MDT" data-item-qty="2.0000000000" data-item-price="17000" data-item-total="34000" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													EMBELLISHED MDT												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc" style="max-width: 30%;">
+																									</div>
+
+																																			</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦17,000.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												2
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦34,000.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+											<tbody data-line="2" data-sale-id="1" data-item-id="139" data-item-name="CHIGANVY INDIA" data-item-qty="1.0000000000" data-item-price="8000" data-item-total="8000" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													CHIGANVY INDIA												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc" style="max-width: 30%;">
+																									</div>
+
+																																			</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦8,000.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												1
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦8,000.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+											<tbody data-line="1" data-sale-id="1" data-item-id="126" data-item-name="HOLLAND MEDIUM" data-item-qty="2.0000000000" data-item-price="11500" data-item-total="23000" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													HOLLAND MEDIUM												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc" style="max-width: 30%;">
+																									</div>
+
+																																			</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦11,500.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												2
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦23,000.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+											<tbody data-line="0" data-sale-id="1" data-item-id="131" data-item-name="DISCO WAX" data-item-qty="3.0000000000" data-item-price="10500" data-item-total="31500" data-item-class="item">
+							<tr class="invoice-item-details">
+								<!-- invoice items-->
+								<td class="invoice-table-content">
+									<div class="row receipt-row-item-holder">
+										<div class="col-md-12 col-sm-12 col-xs-12">
+											<div class="invoice-content invoice-con">
+												<div class="invoice-content-heading">
+													DISCO WAX												</div>
+
+																								<div class="invoice-desc">
+																									</div>
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc">
+																									</div>
+												
+												
+												<div class="invoice-desc" style="max-width: 30%;">
+																									</div>
+
+																																			</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-price text-right">
+
+												
+												₦10,500.00											</div>
+										</div>
+										<div class="col-md-4 col-sm-4 col-xs-4 ">
+											<div class="invoice-content item-qty text-right">
+												3
+											</div>
+										</div>
+										
+										<div class="col-md-4 col-sm-4 col-xs-4 gift_receipt_element">
+											<div class="invoice-content item-total pull-right">
+												₦31,500.00
+																																			</div>
+										</div>
+									</div>
+																	</td>
+							</tr>
+
+						</tbody>
+									</table>
+
+								<div class="invoice-footer gift_receipt_element">
+					
+										
+					
+										
+					<div class="row">
+						<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+							<div class="invoice-footer-heading">Sub Total</div>
+						</div>
+						<div class="col-md-2 col-sm-2 col-xs-4">
+							<div class="invoice-footer-value">
+								₦164,500.00							</div>
+						</div>
+					</div>
+
+										
+					
+										<div class="row">
+						<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+							<div class="invoice-footer-heading">Total</div>
+						</div>
+						<div class="col-md-2 col-sm-2 col-xs-4">
+							<div class="invoice-footer-value invoice-total" style="font-size: 150%;font-weight: bold;;">
+
+
+																	₦164,500.00								
+							</div>
+						</div>
+					</div>
+					
+										
+					
+					
+										
+										<div class="row">
+						<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+							<div class="invoice-footer-heading">Weight</div>
+						</div>
+						<div class="col-md-2 col-sm-2 col-xs-4">
+							<div class="invoice-footer-value invoice-total">
+								0							</div>
+						</div>
+					</div>
+										
+					
+										
+
+					<div class="row">
+													<div class="col-md-offset-4 col-sm-offset-4 col-md-6 col-sm-6 col-xs-8">
+								<div class="invoice-footer-heading">Number of items sold</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-total">12</div>
+							</div>
+						
+						
+					</div>
+
+											<div class="row">
+							<div class="col-md-offset-4 col-sm-offset-4 col-xs-offset-4 col-md-4 col-sm-4 col-xs-4">
+								<div class="invoice-footer-heading">03/31/2026 12:28 pm</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+																	<div class="invoice-footer-value">
+										MONIEPOINT									</div>
+															</div>
+
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-payment">
+
+
+
+																			₦166,000.00									
+
+								</div>
+							</div>
+
+							
+						</div>
+											<div class="row">
+							<div class="col-md-offset-4 col-sm-offset-4 col-xs-offset-4 col-md-4 col-sm-4 col-xs-4">
+								<div class="invoice-footer-heading">03/31/2026 12:29 pm</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+																	<div class="invoice-footer-value">
+										Cash									</div>
+															</div>
+
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-payment">
+
+
+
+																			<span style="white-space:nowrap;">-</span>₦1,500.00									
+
+								</div>
+							</div>
+
+							
+						</div>
+					
+																											
+					
+					
+					
+					
+
+					
+
+					
+
+										
+											<div class="row">
+							<div class="col-md-offset-8 col-sm-offset-8 col-xs-offset-2 col-md-2 col-sm-2 col-xs-6">
+								<div class="invoice-footer-heading">Change Due</div>
+							</div>
+							<div class="col-md-2 col-sm-2 col-xs-4">
+								<div class="invoice-footer-value invoice-total">
+
+																			₦0.00									
+
+								</div>
+							</div>
+						</div>
+					
+
+				</div>
+				<!-- invoice footer-->
+				
+				<div class="row">
+					<div class="col-md-12 col-sm-12 col-xs-12">
+						<div class="text-center invoice-policy">
+							CUSTOMER						</div>
+					</div>
+				</div>
+				
+				<div class="row">
+					<div class="col-md-12 col-sm-12 col-xs-12">
+						<div class="invoice-policy" id="invoice-policy-return">
+							Change return policy						</div>
+
+						<div class="invoice-policy" id="invoice-policy-return-mobile" style="display: none;line-height:1;">
+							Change&nbsp;return&nbsp;policy						</div>
+
+						<div id="receipt_type_label" style="display: none;" class="receipt_type_label invoice-policy">
+							Merchant Copy						</div>
+
+																					<div id='barcode' class="invoice-policy">
+									<img src='https://fahadtahir.pos4africa.com/index.php/barcode/index/svg?barcode=S1&text=S1' alt=''/>								</div>
+													
+												
+												<div id="announcement" class="invoice-policy">
+													</div>
+
+						<div id="announcement-mobile" class="invoice-policy" style="display: none;line-height:1;">
+													</div>
+
+
+
+											</div>
+
+											<div class="col-md-6 col-sm-6" style="margin-top: 30px;">
+							<div id="signature">
+								
+								
+							</div>
+						</div>
+									</div>
+			</div>
+			<!-- Receipt Footer: Signature & Stamp Section -->
+			<div style="margin-top: 15px; padding: 10px 0;">
+				<table width="100%" border="0" cellpadding="0" cellspacing="0">
+				  <tr>
+				    <td width="45%" style="vertical-align: bottom; padding: 0 10px;">
+				      <div style="text-align: center; padding-top: 20px;">
+				        <div style="border-bottom: 1px solid #333; width: 90%; margin: 0 auto;"></div>
+				        <div style="margin-top: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #333;">Customer Sign</div>
+				      </div>
+				    </td>
+				    <td width="10%"></td>
+				    <td width="45%" style="vertical-align: bottom; padding: 0 10px;">
+				      <div style="text-align: center;">
+				        				        <div style="border-bottom: 1px solid #333; width: 90%; margin: 0 auto;"></div>
+				        <div style="margin-top: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #333;">TAHIR GENERAL MERCHANT</div>
+				      </div>
+				    </td>
+				  </tr>
+				</table>
+			</div>
+			
+
+			</div>
+			
+			<!--container-->
+		</div>
+	</div>
+</div>
+</div>
+
+
+<div class="modal fade" id="verifyModal" tabindex="-1" role="dialog" aria-labelledby="verifyModalLabel">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title" id="verifyModalLabel">Verify </h4>
+            </div>
+            <div class="modal-body">
+                                								
+				<div class="table-responsive">
+					<table class="table table-striped table-hover">
+						<thead>
+							<tr>
+								<th>Item Name</th>
+								<th>Variation</th>
+								<th class="text-right">Sale Qty</th>
+								<th class="text-right" style="width: 150px;">Verified Qty</th>
+								<th class="text-right">Stock on Hand</th>
+								<th class="text-right">Stock Before Sale</th>
+								<th class="text-right">Stock After Verify</th>
+								<th style="width: 25%;">Status</th>
+							</tr>
+						</thead>
+						<tbody id="verify-items-tbody">
+													<tr class="" 
+								data-item-id="153" 
+								data-variation-id="0"
+								data-variation-name="None"
+								data-original-stock="3"
+								data-sold-qty="2">
+								
+								<td>LAGOS LACE F</td>
+								<td>None</td>
+								<td class="text-right sold-qty">2</td>
+								
+								<td>
+									<input type="number" class="form-control text-right verify-quantity-input"  value="" />
+								</td>
+								<td class="text-right">1</td>
+								<td class="text-right stock-before">3</td>
+								<td class="text-right stock-after-result">1</td>
+								
+								<td>
+																	</td>
+							</tr>
+													<tr class="" 
+								data-item-id="116" 
+								data-variation-id="0"
+								data-variation-name="None"
+								data-original-stock="85"
+								data-sold-qty="2">
+								
+								<td>MEDIUM GLITTER</td>
+								<td>None</td>
+								<td class="text-right sold-qty">2</td>
+								
+								<td>
+									<input type="number" class="form-control text-right verify-quantity-input"  value="" />
+								</td>
+								<td class="text-right">83</td>
+								<td class="text-right stock-before">85</td>
+								<td class="text-right stock-after-result">83</td>
+								
+								<td>
+																	</td>
+							</tr>
+													<tr class="" 
+								data-item-id="117" 
+								data-variation-id="0"
+								data-variation-name="None"
+								data-original-stock="727"
+								data-sold-qty="2">
+								
+								<td>EMBELLISHED MDT</td>
+								<td>None</td>
+								<td class="text-right sold-qty">2</td>
+								
+								<td>
+									<input type="number" class="form-control text-right verify-quantity-input"  value="" />
+								</td>
+								<td class="text-right">725</td>
+								<td class="text-right stock-before">727</td>
+								<td class="text-right stock-after-result">725</td>
+								
+								<td>
+																	</td>
+							</tr>
+													<tr class="" 
+								data-item-id="139" 
+								data-variation-id="0"
+								data-variation-name="None"
+								data-original-stock="111"
+								data-sold-qty="1">
+								
+								<td>CHIGANVY INDIA</td>
+								<td>None</td>
+								<td class="text-right sold-qty">1</td>
+								
+								<td>
+									<input type="number" class="form-control text-right verify-quantity-input"  value="" />
+								</td>
+								<td class="text-right">110</td>
+								<td class="text-right stock-before">111</td>
+								<td class="text-right stock-after-result">110</td>
+								
+								<td>
+																	</td>
+							</tr>
+													<tr class="" 
+								data-item-id="126" 
+								data-variation-id="0"
+								data-variation-name="None"
+								data-original-stock="135"
+								data-sold-qty="2">
+								
+								<td>HOLLAND MEDIUM</td>
+								<td>None</td>
+								<td class="text-right sold-qty">2</td>
+								
+								<td>
+									<input type="number" class="form-control text-right verify-quantity-input"  value="" />
+								</td>
+								<td class="text-right">133</td>
+								<td class="text-right stock-before">135</td>
+								<td class="text-right stock-after-result">133</td>
+								
+								<td>
+																	</td>
+							</tr>
+													<tr class="" 
+								data-item-id="131" 
+								data-variation-id="0"
+								data-variation-name="None"
+								data-original-stock="40"
+								data-sold-qty="3">
+								
+								<td>DISCO WAX</td>
+								<td>None</td>
+								<td class="text-right sold-qty">3</td>
+								
+								<td>
+									<input type="number" class="form-control text-right verify-quantity-input"  value="" />
+								</td>
+								<td class="text-right">37</td>
+								<td class="text-right stock-before">40</td>
+								<td class="text-right stock-after-result">37</td>
+								
+								<td>
+																	</td>
+							</tr>
+												</tbody>
+					</table>
+				</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submit-verification">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="duplicate_receipt_holder" style="display: none;">
+
+</div>
+
+
+
+<script type="text/javascript">
+	$(document).ready(function() {
+	
+				$("#edit_sale").click(function(e) {
+			e.preventDefault();
+			bootbox.confirm("Are you sure you want to edit this sale? This will replace the current sale.", function(result) {
+				if (result) {
+					$("#sales_change_form").submit();
+				}
+			});
+		});
+
+		$("#email_receipt,#sms_receipt").click(function() {
+			$.get($(this).attr('href'), function() {
+				show_feedback('success', "Receipt sent", "Success");
+
+			});
+
+			return false;
+		});
+
+		// WhatsApp Share via wa.me link (handled by window.share_receipt in the inline script above)
+		// No duplicate handler needed here since the button already calls window.share_receipt()
+
+
+    $('#verify_receipt_button').on('click', function() {
+        $('#verifyModal').modal('show');
+    });
+    
+    var quantity_decimals = 0;
+
+    $('#verify-items-tbody').on('input', '.verify-quantity-input', function() {
+        var $row = $(this).closest('tr');
+        var stockBefore = parseFloat($row.data('original-stock')) || 0;
+        var soldQty = parseFloat($row.data('sold-qty')) || 0;
+        var verifiedQty = parseFloat($(this).val()) || 0;
+        
+        var newStockAfter = stockBefore - verifiedQty;
+        
+        $row.find('.stock-after-result').text(newStockAfter.toFixed(quantity_decimals));
+        
+        if ($(this).val() !== '' && verifiedQty !== soldQty) {
+            $row.addClass('warning'); 
+        } else {
+            $row.removeClass('warning');
+        }
+    });
+
+    $('#variation_filter').on('change', function() {
+        var selectedVariation = $(this).val();
+        $('#verify-items-tbody tr').each(function() {
+            if (selectedVariation === '' || $(this).data('variation-name') === selectedVariation) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    $('#submit-verification').on('click', function() {
+        var verificationData = [];
+        
+        $('#verify-items-tbody tr').each(function() {
+            var row = $(this);
+            var verifiedQtyInput = row.find('.verify-quantity-input');
+            var verifiedQty = verifiedQtyInput.val();
+
+            if (verifiedQty !== '' && !isNaN(verifiedQty) && !verifiedQtyInput.is(':disabled')) {
+                verificationData.push({
+                    item_id: row.data('item-id'),
+                    variation_id: row.data('variation-id'),
+                    verified_qty: parseFloat(verifiedQty)
+                });
+            }
+        });
+        
+        if (verificationData.length > 0) {
+            $('#submit-verification').prop('disabled', true).text('');
+
+            $.ajax({
+                type: 'POST',
+                url: 'https://fahadtahir.pos4africa.com/index.php/sales/save_verification/1',
+                data: {
+                    'ci_csrf_token': '',
+                    verification_data: verificationData
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        show_feedback('success', response.message, "Success");
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000); 
+                    } else {
+                        if (response.already_verified) {
+                            var errorMessage = "The item \"%1\" was already verified by %2 on %3. No changes were saved."                                .replace('%1', response.item_name)
+                                .replace('%2', response.verifier_name)
+                                .replace('%3', response.verified_at);
+                            
+                            show_feedback('error', errorMessage, "Error");
+                        } else {
+                            show_feedback('error', response.message, "Error");
+                        }
+                        $('#submit-verification').prop('disabled', false).text('Submit');
+                    }
+                },
+                error: function() {
+                    show_feedback('error', "An unexpected error occurred.", "Error");
+                    $('#submit-verification').prop('disabled', false).text('Submit');
+                }
+            });
+        } else {
+            $('#verifyModal').modal('hide');
+        }
+    });
+
+		});
+
+	$('#print_duplicate_receipt').click(function() {
+		if ($('#print_duplicate_receipt').prop('checked')) {
+			var receipt = $('#receipt_wrapper').clone();
+			$('#duplicate_receipt_holder').html(receipt);
+			$("#duplicate_receipt_holder").addClass('visible-print-block');
+			$("#duplicate_receipt_holder #signature_holder").addClass('hidden');
+			$("#duplicate_receipt_holder .receipt_type_label").text("Duplicate receipt");
+			$(".receipt_type_label").show();
+			$(".receipt_type_label").addClass('show_receipt_labels');
+		} else {
+			$("#duplicate_receipt_holder").empty();
+			$("#duplicate_receipt_holder").removeClass('visible-print-block');
+			$("#duplicate_receipt_holder #signature_holder").removeClass('hidden');
+			$(".receipt_type_label").hide();
+			$(".receipt_type_label").removeClass('show_receipt_labels');
+		}
+	});
+
+	
+	
+	function print_receipt() {
+		window.print();
+	}
+
+	function toggle_gift_receipt() {
+		var gift_receipt_text = "Gift Receipt";
+		var regular_receipt_text = "Regular Receipt";
+
+		if ($("#gift_receipt_button").hasClass('regular_receipt')) {
+			$('#gift_receipt_button').addClass('gift_receipt');
+			$('#gift_receipt_button').removeClass('regular_receipt');
+			$("#gift_receipt_button").text(gift_receipt_text);
+			$('.gift_receipt_element').show();
+		} else {
+			$('#gift_receipt_button').removeClass('gift_receipt');
+			$('#gift_receipt_button').addClass('regular_receipt');
+			$("#gift_receipt_button").text(regular_receipt_text);
+			$('.gift_receipt_element').hide();
+		}
+		
+		
+		render_receipt_for_ios_and_android();
+	}
+
+	//timer for sig refresh
+	var refresh_timer;
+	var sig_canvas = document.getElementById('sig_cnv');
+
+		$("#capture_digital_sig_button").click(function() {
+					try {
+				if (TabletConnectQuery() == 0) {
+					bootbox.alert("Unable to connect to signature pad; please verify it is installed correctly and plugged in");
+					return;
+				}
+			} catch (exception) {
+				bootbox.alert("Unable to connect to signature pad; please verify it is installed correctly and plugged in");
+				return;
+			}
+
+			var ctx = document.getElementById('sig_cnv').getContext('2d');
+			SigWebSetDisplayTarget(ctx);
+			SetDisplayXSize(500);
+			SetDisplayYSize(100);
+			SetJustifyMode(0);
+			refresh_timer = SetTabletState(1, ctx, 50);
+			KeyPadClearHotSpotList();
+			ClearSigWindow(1);
+			ClearTablet();
+		
+		$("#capture_digital_sig_button").hide();
+		$("#digital_sig_holder").show();
+	});
+
+	$("#capture_digital_sig_clear_button").click(function() {
+					ClearTablet();
+			});
+
+	$("#capture_digital_sig_done_button").click(function() {
+					if (NumberOfTabletPoints() == 0) {
+				bootbox.alert("No signature captured, please try again");
+			} else {
+				SetTabletState(0, refresh_timer);
+				//RETURN TOPAZ-FORMAT SIGSTRING
+				SetSigCompressionMode(1);
+				var sig = GetSigString();
+
+				//RETURN BMP BYTE ARRAY CONVERTED TO BASE64 STRING
+				SetImageXSize(500);
+				SetImageYSize(100);
+				SetImagePenWidth(5);
+				GetSigImageB64(SigImageCallback);
+				$("#capture_digital_sig_button").show();
+			}
+			});
+
+	function SigImageCallback(str) {
+		$("#digital_sig_holder").hide();
+		$.post('https://fahadtahir.pos4africa.com/index.php/sales/sig_save', {
+			sale_id: "1",
+			image: str
+		}, function(response) {
+			$("#signature_holder").empty();
+			$("#signature_holder").append('<img src="' + SITE_URL + '/app_files/view_cacheable/' + response.file_id + '?timestamp=' + response.file_timestamp + '" width="250" />');
+		}, 'json');
+
+	}
+
+		
+		
+	</script>
+
+
+<script>
+	
+	function render_receipt_for_ios_and_android()
+	{
+		html2canvas(document.querySelector("#receipt_wrapper"), {
+			height: $("#receipt_wrapper").height(),
+			windowWidth: 280,
+			onclone: function(doc) {
+				doc.querySelector('#invoice-policy-return').style.display = 'none';
+				doc.querySelector('#invoice-policy-return-mobile').style.display = 'block';
+
+				doc.querySelector('#announcement').style.display = 'none';
+				doc.querySelector('#announcement-mobile').style.display = 'block';
+
+				doc.querySelector('.remove_when_mobile').style.display = 'none';
+				doc.querySelector('.keep_when_mobile').style.display = 'block';
+				doc.querySelector('.invoice-total').style.fontSize = '100%';
+				doc.querySelectorAll('.invoice-table-content').forEach(function(item) {
+					item.style.borderBottom = 'none';
+				});
+
+
+				doc.querySelectorAll('.receipt-row-item-holder').forEach(function(item) {
+					item.style.clear = 'both';
+				});
+
+				if ($("#capture_digital_sig_button").length) {
+					doc.querySelector('#capture_digital_sig_button').style.display = 'none';
+				}
+
+			}
+		}).then(canvas => {
+			document.getElementById("print_image_output").innerHTML = canvas.toDataURL();
+		});
+	}
+	
+	render_receipt_for_ios_and_android();
+
+</script>
+<script type="text/print-image" id="print_image_output"></script>
+<!-- This is used for mobile apps to print receipt-->
+<script type="text/print" id="print_output">TAHIR GENERAL MERCHANT
+NEW ALARAMMA HOUSE IBB WAY
+08155445454, 08093336468, 08083765442
+
+Sales Receipt
+03/31/2026 12:29 pm
+	Customer: Tahir Indoor And Outdoor Customers  		
+				
+	
+Sale ID: TAHIR 1	
+BB	
+
+Item            Price Qty. Total
+---------------------------------------
+LAGOS LACE F   ₦17,000.00 2 ₦34,000.00
+    	
+
+MEDIUM GLITTER... ₦17,000.00 2 ₦34,000.00
+    	
+
+EMBELLISHED MD... ₦17,000.00 2 ₦34,000.00
+    	
+
+CHIGANVY INDIA... ₦8,000.00 1 ₦8,000.00
+    	
+
+HOLLAND MEDIUM... ₦11,500.00 2 ₦23,000.00
+    	
+
+DISCO WAX      ₦10,500.00 3 ₦31,500.00
+    	
+
+
+Sub Total: ₦164,500.00
+
+
+Total: ₦164,500.00
+Number of items sold: 12
+
+03/31/2026 12:28 pm  MONIEPOINT ₦166,000.00
+
+03/31/2026 12:29 pm  Cash -₦1,500.00
+	
+Change Due: ₦0.00
+CUSTOMER
+Change return policy</script>
+		<div id="footers" class="col-md-12 hidden-print text-center">
+			Please visit our			<a tabindex="-1" href="http://pos4africa.ng/demo" target="_blank">Website</a> to learn the latest information about the project.
+			<span class="text-info">You are using Pos4africa Version <span class="badge bg-primary"> 19.4</span></span> Built on 04/30/2025 10:42 am EST			    <!-- Contact Information -->
+    <div class="text-contact">
+        <p>Contact: <a href="">08166795774,08097691050</a></p>
+		<a href="https://wa.me/2348166795774" target="_blank">Chat on WhatsApp</a>
+
+    </div>
+		</div>
+		
+	</div>
+	<!---content -->
+</div> <!-- wrapper -->
+</body>
+	<script>
+		function getBodyScrollTop() {
+			var el = document.scrollingElement || document.documentElement;
+
+			return el.scrollTop;
+		}
+
+		$(window).on("beforeunload", function() {
+
+			var scroll_top =
+				$.ajax("https:\/\/fahadtahir.pos4africa.com\/index.php\/home\/save_scroll", {
+					async: false,
+					data: {
+						scroll_to: getBodyScrollTop()
+					}
+				});
+		});
+	</script>
+	
+<script>
+	async function delete_all_client_side_dbs()
+	{
+		//If we can list out all datbases this is the best method in case we are in an odd state
+		//Supports chrome, safari
+		if (window.indexedDB.databases)
+		{
+			 window.indexedDB.databases().then((r) => 
+			 {
+			     for (var i = 0; i < r.length; i++)
+		         {
+		             window.indexedDB.deleteDatabase(r[i].name);     
+		         } 
+			 })
+		}
+		else //For firefox
+		{
+			try
+			{
+	 			var phppos_customers = new PouchDB('phppos_customers',{revs_limit: 1});
+	 			var phppos_items = new PouchDB('phppos_items',{revs_limit: 1});
+				var phppos_settings = new PouchDB('phppos_settings',{revs_limit: 1});
+				await phppos_customers.destroy();
+				await phppos_items.destroy();
+				await phppos_settings.destroy();
+			}
+			catch(exception_var)
+			{
+				
+			}
+		}
+		
+	}
+</script>
+
+</html>

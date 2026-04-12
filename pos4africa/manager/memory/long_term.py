@@ -16,6 +16,7 @@ import orjson
 from pos4africa.config.settings import settings
 from pos4africa.infra.redis_client import RedisClient
 from .search_nomalisation import search_
+from pos4africa.shared.utils.logger import get_logger
 
 def _normalise_name(name: str) -> str: return name.lower().strip()
 
@@ -25,6 +26,17 @@ class LongTermMemory:
             self._redis: RedisClient = redis
             self._refresh_task: asyncio.Task | None = None
             self._CUSTOMER_KEY = settings.redis_customers_id
+            self.log = get_logger(__name__)
+            
+            
+      async def redis_set(self, key: str, value: dict, **kwargs) -> None:
+            await self._redis.set(key, orjson.dumps(value), **kwargs)
+            
+      async def redis_get(self, key: str) -> dict | None:
+            value = await self._redis.get(key)
+            if value:
+                  return orjson.loads(value)
+            return None
 
       # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -42,8 +54,9 @@ class LongTermMemory:
                   await asyncio.sleep(settings.redis_long_term_refresh_interval)
                   try:
                         await self._sync_customers()
+                        await self._sync_accounts()
                   except Exception as exc:
-                        print(exc)
+                        self.log("Failed to sync customers & accounts with an Exception", exc=exc)
 
       async def _sync_customers(self) -> None:
             from pos4africa.worker.components import Sync 
@@ -84,7 +97,7 @@ class LongTermMemory:
             if _id:
                   return _id
             
-            _fuzz_list = fuzz_list_callback()
+            _fuzz_list = await fuzz_list_callback()
             best_match = search_(normalised_name, list(_fuzz_list.keys()))
             
             if not best_match:

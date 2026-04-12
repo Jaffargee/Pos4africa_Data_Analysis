@@ -9,7 +9,6 @@ class MemoryStore:
             self.node_id = node_id
             self.ltm = LongTermMemory(redis=redis)
             
-            
       async def initialise(self) -> None:
             await self.ltm.warm_up()
             

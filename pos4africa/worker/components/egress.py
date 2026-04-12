@@ -9,7 +9,7 @@ from pos4africa.config.settings import settings
 
 from aio_pika import DeliveryMode, Message
 from collections import deque
-import orjson
+import orjson, json
 
 class WorkerEgress(BaseComponent):
       
@@ -61,7 +61,7 @@ class WorkerEgress(BaseComponent):
             if not payload:
                   self.log.warning(f"Rabbitmq payload is not provided.", node_id=self.node_id)
                   return None
-            
+                        
             channel = await get_channel()
             body = orjson.dumps({
                   **payload,
@@ -80,4 +80,3 @@ class WorkerEgress(BaseComponent):
             await channel.declare_queue(settings.rabbitmq_queue_sales, durable=True)
             await channel.default_exchange.publish(message, routing_key=settings.rabbitmq_queue_sales)
             
-            print('Sent')

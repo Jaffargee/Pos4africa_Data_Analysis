@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import List, Dict, Any
 
 from pos4africa.config.settings import settings
-from pos4africa.infra.supabase_client import get_supabase
+from pos4africa.infra.supabase_client import spb_client
 from pos4africa.shared.utils.logger import get_logger
 from pos4africa.shared.utils.retry import with_retry_async
 
@@ -62,18 +62,24 @@ class BatchWriter:
             """
             Performs the actual upsert operation with retry logic.
             """
-            sb = get_supabase()
-
+            # Log first record as sample
+            if chunk:
+                  log.debug("batch_writer.sample_record", record=chunk[0].get('pos_sale_id'))
+                  
             try:
-                  result = (
-                  sb.table(self._table)
-                  .upsert(
-                        chunk,
-                        on_conflict="pos_sale_id",
-                  )
-                  .execute()
-                  )
-
+                  # result = spb_client.rpc("insert_sale", {"payload": chunk}).execute()
+                  for record in chunk:
+                        result = spb_client.rpc("insert_sale", {"payload": record}).execute()
+                  
+                        # Check each result
+                        if hasattr(result, "error") and result.error:
+                              log.error(
+                                    "batch_writer.supabase_error",
+                                    error=str(result.error),
+                                    record=record.get('pos_sale_id'),
+                              )
+                              raise RuntimeError(f"Supabase upsert error: {result.error}")
+                  
             except Exception as exc:
                   # Network / transport error
                   log.error(
