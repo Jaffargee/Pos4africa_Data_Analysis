@@ -12,11 +12,11 @@ from __future__ import annotations
 import asyncio
 
 from pos4africa.manager.host import HostManager
-# from pos4africa.shared.utils.logger import configure_logging
+from pos4africa.shared.utils.logger import configure_logging
 
 
 async def main() -> None:
-      # configure_logging()
+      configure_logging()
       manager = HostManager()
       await manager.run()
 

@@ -8,8 +8,8 @@ class Account(BaseModel):
       id: UUID | None = None
 
       account_no: int | None = None
-      account_name: str | None = None
-      account_bank: str | None = None
+      bank_name: str | None = None
+      name: str | None = None
 
       currency: str = 'NGN'
       active: bool = True

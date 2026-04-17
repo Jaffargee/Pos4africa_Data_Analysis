@@ -1,14 +1,14 @@
 """
-batch_writer.py — BatchWriter
+batch_writer.py
 
-Takes a list of ProcessedSale dicts and bulk-upserts them into Supabase.
-Uses upsert with on_conflict=pos_sale_id to be idempotent —
-re-running a scrape won't duplicate records.
+Writes the Excel-ingested sales directly to Supabase tables.
+This bypasses the legacy `insert_sale` RPC, which is out of sync with the
+current runtime payload.
 """
 
 from __future__ import annotations
 
-from typing import List, Dict, Any
+from typing import Any
 
 from pos4africa.config.settings import settings
 from pos4africa.infra.supabase_client import spb_client
@@ -20,87 +20,107 @@ log = get_logger(__name__)
 
 class BatchWriter:
       def __init__(self) -> None:
-            self._table = settings.supabase_table_sales
+            self._sales_table = settings.supabase_table_sales
+            self._sale_items_table = "sale_items"
+            self._sale_payments_table = "payments"
             self._batch_size = settings.supabase_batch_size
 
-      async def write(self, records: List[Dict[str, Any]]) -> int:
-            """
-            Upsert records into Supabase in sub-batches.
-            Returns total number of records upserted.
-            """
+      async def write(self, records: list[dict[str, Any]]) -> int:
             if not records:
                   return 0
 
             total = 0
-
             for i in range(0, len(records), self._batch_size):
                   chunk = records[i : i + self._batch_size]
+                  await self._write_chunk(chunk)
+                  total += len(chunk)
 
-                  try:
-                        await self._upsert_chunk(chunk)
-                        total += len(chunk)
+                  log.info(
+                        "batch_writer.chunk_written",
+                        chunk_size=len(chunk),
+                        total_written=total,
+                  )
 
-                        log.debug(
-                              "batch_writer.chunk_written",
-                              count=len(chunk),
-                        )
-
-                  except Exception as exc:
-                        log.error(
-                              "batch_writer.chunk_failed",
-                              error=str(exc),
-                              chunk_size=len(chunk),
-                        )
-                        # Fail fast — let consumer decide retry/DLQ
-                        raise
-
-            log.info("batch_writer.done", total=total)
             return total
 
       @with_retry_async
-      async def _upsert_chunk(self, chunk: List[Dict[str, Any]]) -> None:
-            """
-            Performs the actual upsert operation with retry logic.
-            """
-            # Log first record as sample
-            if chunk:
-                  log.debug("batch_writer.sample_record", record=chunk[0].get('pos_sale_id'))
-                  
-            try:
-                  # result = spb_client.rpc("insert_sale", {"payload": chunk}).execute()
-                  for record in chunk:
-                        result = spb_client.rpc("insert_sale", {"payload": record}).execute()
-                  
-                        # Check each result
-                        if hasattr(result, "error") and result.error:
-                              log.error(
-                                    "batch_writer.supabase_error",
-                                    error=str(result.error),
-                                    record=record.get('pos_sale_id'),
-                              )
-                              raise RuntimeError(f"Supabase upsert error: {result.error}")
-                  
-            except Exception as exc:
-                  # Network / transport error
-                  log.error(
-                        "batch_writer.transport_error",
-                        error=str(exc),
-                        chunk_size=len(chunk),
-                  )
-                  raise
+      async def _write_chunk(self, chunk: list[dict[str, Any]]) -> None:
+            sales_rows = [self._build_sales_row(record) for record in chunk]
+            sale_ids = [record["pos_sale_id"] for record in chunk]
+            item_rows = [
+                  self._build_item_row(item, record["pos_sale_id"])
+                  for record in chunk
+                  for item in record.get("items", [])
+            ]
+            payment_rows = [
+                  self._build_payment_row(payment, record["pos_sale_id"])
+                  for record in chunk
+                  for payment in record.get("payments", [])
+            ]
 
-            # Supabase-specific error handling
+            sales_result = spb_client.table(self._sales_table).upsert(
+                  sales_rows,
+                  on_conflict="pos_sale_id",
+              ).execute()
+            self._raise_on_error(sales_result, self._sales_table)
+
+            delete_items_result = (
+                  spb_client.table(self._sale_items_table)
+                  .delete()
+                  .in_("pos_sale_id", sale_ids)
+                  .execute()
+            )
+            self._raise_on_error(delete_items_result, self._sale_items_table)
+
+            delete_payments_result = (
+                  spb_client.table(self._sale_payments_table)
+                  .delete()
+                  .in_("pos_sale_id", sale_ids)
+                  .execute()
+            )
+            self._raise_on_error(delete_payments_result, self._sale_payments_table)
+
+            if item_rows:
+                  item_result = spb_client.table(self._sale_items_table).insert(item_rows).execute()
+                  self._raise_on_error(item_result, self._sale_items_table)
+
+            if payment_rows:
+                  payment_result = spb_client.table(self._sale_payments_table).insert(payment_rows).execute()
+                  self._raise_on_error(payment_result, self._sale_payments_table)
+
+      def _build_sales_row(self, record: dict[str, Any]) -> dict[str, Any]:
+            return {
+                  "pos_sale_id": record["pos_sale_id"],
+                  "invoice_total": record["invoice_total"],
+                  "pos_customer_id": record.get("pos_customer_id"),
+                  "customer_name": record.get("customer_name"),
+                  "salesperson": record.get("salesperson"),
+                  "invoice_datetime": record["invoice_datetime"],
+                  "comment": record.get("comment"),
+                  "is_anonymous_customer": record.get("is_anonymous_customer", False),
+                  "items_net": record.get("items_net", 0),
+                  "items_sold": record.get("items_sold", 0),
+                  "items_returned": record.get("items_returned", 0),
+            }
+
+      def _build_item_row(self, item: dict[str, Any], sale_id: int) -> dict[str, Any]:
+            return {
+                  "pos_sale_id": sale_id,
+                  "pos_item_id": item.get("pos_item_id"),
+                  "name": item.get("name"),
+                  "quantity": item.get("quantity", 0),
+                  "unit_price": item.get("unit_price", 0),
+                  "total": item.get("total", 0),
+            }
+
+      def _build_payment_row(self, payment: dict[str, Any], sale_id: int) -> dict[str, Any]:
+            return {
+                  "pos_sale_id": sale_id,
+                  "account": payment.get("account"),
+                  "account_id": payment.get("account_id"),
+                  "amount": payment.get("amount", 0),
+            }
+
+      def _raise_on_error(self, result: Any, table: str) -> None:
             if hasattr(result, "error") and result.error:
-                  log.error(
-                        "batch_writer.supabase_error",
-                        error=str(result.error),
-                        chunk_size=len(chunk),
-                  )
-                  raise RuntimeError(f"Supabase upsert error: {result.error}")
-
-            # Optional: sanity check response
-            if not hasattr(result, "data") or result.data is None:
-                  log.warning(
-                        "batch_writer.empty_response",
-                        chunk_size=len(chunk),
-                  )
+                  raise RuntimeError(f"Supabase write failed for '{table}': {result.error}")

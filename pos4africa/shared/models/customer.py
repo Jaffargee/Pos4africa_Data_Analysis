@@ -7,8 +7,7 @@ class Customer(BaseModel):
       id: UUID | None = None
 
       pos_customer_id: int
-      name: str
-
+      
       first_name: str | None = None
       last_name: str | None = None
       company_name: str | None = None

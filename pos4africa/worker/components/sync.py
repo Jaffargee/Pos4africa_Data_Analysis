@@ -10,7 +10,7 @@ class Sync:
       _RETRY_DELAY = 1.5 # Seconds 1.5s (basic backoff)
       
       @staticmethod
-      def _select_all(table: str = settings.supabase_table_customers, columns: str = "id, pos_customer_id, name") -> list[dict[str, any]]:
+      async def _select_all(table: str = settings.supabase_table_customers, columns: str = "id, pos_customer_id, first_name") -> list[dict[str, any]]:
             if not table:
                   raise ValueError("Table must be provided.")
             
@@ -35,19 +35,19 @@ class Sync:
             raise ConnectionError(f"Failed to fetch '{table}' after retries") from last_exc
       
       @staticmethod
-      def fetch_customers() -> list[Customer] | None:
+      async def fetch_customers() -> list[Customer] | None:
             if not settings.supabase_table_customers:
                   raise ValueError('supabase_table_customers is not configured.')
 
-            customers = Sync._select_all()
+            customers = await Sync._select_all()
             
-            return [Customer(**row) for row in customers if row.get("name")]
+            return [Customer(**row) for row in customers if row.get("first_name")]
       
       @staticmethod
-      def fetch_accounts() -> list[Account]:
+      async def fetch_accounts() -> list[Account]:
             if not settings.supabase_table_accounts:
                   raise ValueError('supabase_table_accounts is not configured.')
 
-            accounts = Sync._select_all(table=settings.supabase_table_accounts, columns="id, account_bank") 
+            accounts = await Sync._select_all(table=settings.supabase_table_accounts, columns="id, bank_name") 
             
             return [Account(**acct) for acct in accounts if acct.get("id")]

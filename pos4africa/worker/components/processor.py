@@ -11,7 +11,7 @@ import re
 
 class Processor(BaseComponent):
 
-      DEFAULT_CUSTOMER_ID = 52
+      DEFAULT_CUSTOMER_ID = 23
 
       def __init__(self, node_id: str, memory: MemoryStore) -> None:
             super().__init__(node_id=node_id, memory=memory)
@@ -60,7 +60,7 @@ class Processor(BaseComponent):
                         items.append(
                               ProcessedSaleItem(
                                     pos_sale_id = parsed_sale.pos_sale_id,
-                                    pos_prd_id  = item.pos_prd_id,
+                                    pos_item_id  = item.pos_item_id,
                                     name        = item.name,
                                     quantity    = item.quantity,
                                     unit_price  = item.unit_price,

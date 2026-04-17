@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 class RawSaleItem(BaseModel):
       pos_sale_id: str | None = None
-      pos_prd_id:  str | None = None
+      pos_item_id:  str | None = None
       name:        str | None = None
       quantity:    str | None = None
       unit_price:  str | None = None
@@ -38,6 +38,7 @@ class RawPayment(BaseModel):
 
 class RawSale(BaseModel):
       pos_sale_id:             str | None = None
+      pos_customer_id:         str | None = None
       invoice_datetime:        str | None = None
       salesperson:             str | None = None
       customer_name:           str | None = None
@@ -52,7 +53,7 @@ class RawSale(BaseModel):
       
 
 class SaleItem(BaseModel):
-      pos_prd_id: int | None = None
+      pos_item_id: int | None = None
       pos_sale_id: int | None = None
       name: str | None
       quantity: int | None = None
@@ -66,6 +67,7 @@ class Payment(BaseModel):
 class Sale(BaseModel):
       # IDs
       pos_sale_id: int
+      pos_customer_id: int | None = None
 
       # Datetime
       invoice_datetime: datetime
@@ -100,7 +102,7 @@ class ProcessedPayment(BaseModel):
 
 class ProcessedSaleItem(BaseModel):
       id: UUID | None = None
-      pos_prd_id: int | None = None
+      pos_item_id: int | None = None
       pos_sale_id: int | None = None
       name: str | None
       quantity: int | None = None
@@ -136,10 +138,37 @@ class ProcessedSale(BaseModel):
       payments: list[ProcessedPayment] = []
 
       def to_db_dict(self) -> dict:
-            """Serialise to a dict safe for Supabase upsert."""
-            data = self.model_dump(mode="json")
-            # Supabase expects string UUIDs
-            if data['id'] is not None:
-                  data[key] = str(data[key])
-                  
-            return data
+            """Serialise to the live Supabase table schema."""
+            return {
+                  "pos_sale_id": self.pos_sale_id,
+                  "pos_customer_id": self.pos_customer_id,
+                  "invoice_total": float(self.invoice_total),
+                  "customer_name": self.customer_name,
+                  "salesperson": self.salesperson,
+                  "invoice_datetime": self.invoice_datetime.isoformat(),
+                  "comment": self.comment,
+                  "is_anonymous_customer": self.is_anonymous_customer,
+                  "items_net": self.items_net,
+                  "items_sold": self.items_sold,
+                  "items_returned": self.items_returned,
+                  "items": [
+                        {
+                              "pos_sale_id": item.pos_sale_id,
+                              "pos_item_id": item.pos_item_id,
+                              "name": item.name,
+                              "quantity": item.quantity,
+                              "unit_price": float(item.unit_price),
+                              "total": float(item.total),
+                        }
+                        for item in self.items
+                  ],
+                  "payments": [
+                        {
+                              "pos_sale_id": payment.pos_sale_id,
+                              "account_id": str(payment.account_id),
+                              "account": payment.account,
+                              "amount": float(payment.amount),
+                        }
+                        for payment in self.payments
+                  ],
+            }

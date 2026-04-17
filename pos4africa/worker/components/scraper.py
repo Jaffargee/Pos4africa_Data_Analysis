@@ -142,7 +142,7 @@ class Scraper(BaseComponent):
             for tbody in tbodys:
                   items.append(RawSaleItem(
                         pos_sale_id = tbody.get("data-sale-id"),
-                        pos_prd_id  = tbody.get("data-item-id"),
+                        pos_item_id  = tbody.get("data-item-id"),
                         name        = tbody.get("data-item-name"),
                         quantity    = tbody.get("data-item-qty"),
                         unit_price  = tbody.get("data-item-price"),

@@ -18,8 +18,12 @@ class Settings(BaseSettings):
       pos_request_timeout: float = 30.0          # seconds per HTTP request
       pos_page_size: int = 50                    # records per page
 
+      # Excel source of truth
+      excel_source_path: str = "./Excels/DSR.xlsx"
+      excel_sheet_name: str = "Sheet1"
+
       # ── Worker pool ───────────────────────────────────────────────────────────
-      worker_count: int = Field(default=32, ge=1, le=32)
+      worker_count: int = Field(default=1, ge=1, le=32)
       worker_batch_size: int = 500              # sales records per worker batch
       max_queue_size: int = 5000
       
