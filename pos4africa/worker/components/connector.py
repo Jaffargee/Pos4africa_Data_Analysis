@@ -78,28 +78,16 @@ class PosConnector(BaseComponent):
             resp.raise_for_status()
             self.log.info("connector.logged_in", status=resp.status_code)
 
+      @property
+      def session(self) -> httpx.AsyncClient:
+            return self._session
+      
       # ── Main interface ────────────────────────────────────────────────────────
 
       async def run(self, pos_sale_id: int) -> str:
             await self._rate_limiter.acquire()
             return await self._fetch_page(pos_sale_id)
 
-      # @with_retry_async
-      # async def _fetch_page(self, pos_sale_id: int) -> str:
-      #       assert self._session is not None
-      #       resp = await self._session.get(f"{settings.pos_sales_path}/{pos_sale_id}")
-
-      #       # Re-login on session expiry (common with POS systems)
-      #       if resp.status_code in (401, 403):
-      #             self.log.warning("connector.session_expired", status=resp.status_code)
-      #             await self._login()
-      #             resp = await self._session.get(resp.request.url)
-
-      #       resp.raise_for_status()
-      #       print(f"{settings.pos_sales_path}/{pos_sale_id}")
-      #       print(resp.content)
-      #       print(resp.text)
-      #       return resp.text
 
       @with_retry_async
       async def _fetch_page(self, pos_sale_id: int) -> str:

@@ -8,6 +8,8 @@ class Settings(BaseSettings):
             env_file_encoding="utf-8",
             case_sensitive=False,
       )
+      
+      gemini_api_key: str
 
       # ── POS target ────────────────────────────────────────────────────────────
       pos_base_url: str
