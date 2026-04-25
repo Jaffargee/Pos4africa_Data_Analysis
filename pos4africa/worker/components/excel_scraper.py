@@ -81,17 +81,7 @@ class ExcelScraper(BaseComponent):
             header = group.iloc[0]
             customer_name = self._clean_string(header.get("customer_name"))
             payments = self._parse_payments(header.get("payment_type"))
-            
-            quantities = pd.to_numeric(group["quantity"], errors="coerce").fillna(0)
 
-            is_discount_mask = group["item_name"].apply(self._is_discount)
-
-            # Only real items
-            real_quantities = quantities[~is_discount_mask]
-
-            items_sold = int(real_quantities[real_quantities > 0].sum())
-            items_returned = int(abs(real_quantities[real_quantities < 0].sum()))
-    
             return RawSale(
                   pos_sale_id=str(int(header["sale_id"])),
                   invoice_datetime=self._stringify(header.get("invoice_datetime")),
@@ -99,8 +89,8 @@ class ExcelScraper(BaseComponent):
                   customer_name=customer_name,
                   is_anonymous_customer=self._is_anonymous_customer(customer_name),
                   invoice_total=self._stringify_number(header.get("invoice_total")),
-                  items_sold=self._stringify_number(items_sold),
-                  items_returned=self._stringify_number(items_returned),
+                  items_sold=self._stringify_number(header.get("items_sold")),
+                  items_returned="0",
                   change_due=self._derive_change_due(payments),
                   comment=self._clean_string(header.get("comment")),
                   items=[self._build_item(row) for _, row in group.iterrows()],
@@ -205,8 +195,3 @@ class ExcelScraper(BaseComponent):
                   "total": "line_total",
                   "person_id": "pos_customer_id",
             }
-
-      def _is_discount(self, name: str | None) -> bool:
-            if not name:
-                  return False
-            return "discount" in name.lower()
