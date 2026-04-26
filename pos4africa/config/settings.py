@@ -8,6 +8,8 @@ class Settings(BaseSettings):
             env_file_encoding="utf-8",
             case_sensitive=False,
       )
+      
+      pos_base_url: str
 
       # Excel source of truth
       excel_source_path: str = "./Excels/DSR.xlsx"
