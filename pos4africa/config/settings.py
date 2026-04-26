@@ -8,17 +8,6 @@ class Settings(BaseSettings):
             env_file_encoding="utf-8",
             case_sensitive=False,
       )
-      
-      gemini_api_key: str
-
-      # ── POS target ────────────────────────────────────────────────────────────
-      pos_base_url: str
-      pos_username: str
-      pos_password: SecretStr
-      pos_login_path: str = "/index.php/login"
-      pos_sales_path: str = "/index.php/sales/receipt"
-      pos_request_timeout: float = 30.0          # seconds per HTTP request
-      pos_page_size: int = 50                    # records per page
 
       # Excel source of truth
       excel_source_path: str = "./Excels/DSR.xlsx"
@@ -33,22 +22,6 @@ class Settings(BaseSettings):
       # ── Rate limiting (per worker) ────────────────────────────────────────────
       rate_limit_rps: float = 3.0                # max requests/sec per node
       rate_limit_burst: int = 5                  # burst allowance
-
-      # ── Redis ─────────────────────────────────────────────────────────────────
-      redis_url: str = "redis://localhost:6379/0"
-      redis_customers_id: str
-      redis_accounts_id: str
-      redis_jobs_dedup_key: str
-      redis_queue_key: str
-      redis_short_term_ttl: int = 300            # 5 minutes (seconds)
-      redis_long_term_refresh_interval: int = 1800  # 30 minutes
-
-      # ── RabbitMQ ──────────────────────────────────────────────────────────────
-      rabbitmq_url: str = "amqp://guest:guest@localhost:5672/"
-      rabbitmq_exchange: str = "pos_data"
-      rabbitmq_queue_sales: str = "sales_ingest"
-      rabbitmq_queue_dlq: str = "sales_ingest.dlq"
-      rabbitmq_prefetch_count: int = 100
 
       # ── Supabase ──────────────────────────────────────────────────────────────
       supabase_url: str
