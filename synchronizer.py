@@ -107,15 +107,6 @@ class Syncrhonizer:
             now = datetime.now()
 
             date_log = self._dedup_date_json_log()
-
-            if date_log.get('last_sync'):
-                  last_sync_time = datetime.strptime(date_log['last_sync'], '%Y-%m-%d %H:%M:%S')
-                  if last_sync_time.date() == now.date():
-                        print('Already synced today at:', last_sync_time.strftime('%Y-%m-%d %H:%M:%S'))
-                        return False
-
-            if now.hour > 18:
-                  return True
             
             return True
 
