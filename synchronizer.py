@@ -59,9 +59,6 @@ class Syncrhonizer:
 
       async def init(self) -> None:
             print('Starting the synchronizer...')
-            if not os.path.exists(SYNCRHONIZER_LOG_FILE):
-                  print('Creating synchronizer log file...')
-                  self._create_json_log_file()
             while True:
                   print('Checking if it is time to fetch the Excel file... time:', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                   if self._is_time():
@@ -83,8 +80,6 @@ class Syncrhonizer:
                                           subprocess.run('python -m pos4africa.main', shell=True)
                                     else: subprocess.run('python3 -m pos4africa.main', shell=True)
                                     print('Data transfer completed.')
-                                    log = self._dedup_date_json_log()
-                                    self._write_json_log_file(log)
                               except Exception as exc:
                                     print('Data transfer failed with error:', str(exc))
                         else:
@@ -105,9 +100,7 @@ class Syncrhonizer:
             
       def _is_time(self) -> bool:
             now = datetime.now()
-
-            date_log = self._dedup_date_json_log()
-            
+            print("Time: ", now)          
             return True
 
 
