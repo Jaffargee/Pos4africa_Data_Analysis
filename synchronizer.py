@@ -73,6 +73,7 @@ class Syncrhonizer:
                               hashed_report = sha256(report).hexdigest()
                               if self.current_hashed == hashed_report:
                                     print('Nothing Changes. Skipping data transfer...')
+                                    await asyncio.sleep(250)
                                     continue
                               
                               self.current_hashed = hashed_report
@@ -90,7 +91,7 @@ class Syncrhonizer:
                               print('Failed to download the Excel file.')
                   else:
                         print('It is not time to fetch the Excel file yet. Waiting...')
-                  await asyncio.sleep(600)
+                  await asyncio.sleep(250)
 
       async def _fetch_excel_file(self):
             async with PosConnector(None, None) as connector:
