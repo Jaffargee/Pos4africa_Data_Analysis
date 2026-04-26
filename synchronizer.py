@@ -26,7 +26,7 @@ import os
 
 from pos4africa.worker.components.connector import PosConnector
 
-
+from hashlib import sha256
 
 EXCEL_FILE_BASE_URL = 'https://fahadtahir.pos4africa.com/index.php/reports/generate/detailed_sales'
 ALL_TIME_REPORT = ''
@@ -35,7 +35,7 @@ SYNCRHONIZER_LOG_FILE = './_syncrhonizer.json'
 
 class Syncrhonizer:
       def __init__(self):
-            pass
+            self.current_hashed = ""
 
       def _dedup_date_json_log(self) -> None:
             with open(SYNCRHONIZER_LOG_FILE, 'r') as sync_r:
@@ -70,6 +70,12 @@ class Syncrhonizer:
                         if report:
                               self._overide_excel_file('./Excels/DSR.xlsx', report)
                               print('Excel file downloaded successfully.')
+                              hashed_report = sha256(report).hexdigest()
+                              if self.current_hashed == hashed_report:
+                                    print('Nothing Changes. Skipping data transfer...')
+                                    continue
+                              
+                              self.current_hashed = hashed_report
                               print('Initiating data transfer from Excel to Supabase...')
                               try:
                                     if sys.platform == 'win32':
