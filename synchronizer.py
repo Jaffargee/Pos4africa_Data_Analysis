@@ -41,7 +41,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TRANSFER_CMD = ['python3', '-m', 'pos4africa.main'] if sys.platform == 'linux' else ['python', '-m', 'pos4africa.main']
+TRANSFER_CMD = 'python3 -m pos4africa.main' if sys.platform == 'linux' else 'python -m pos4africa.main'
 
 class Syncrhonizer:
       async def init(self) -> None:
