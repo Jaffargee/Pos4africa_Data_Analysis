@@ -27,82 +27,64 @@ import os
 from pos4africa.worker.components.connector import PosConnector
 
 from hashlib import sha256
+import sys, logging
 
 EXCEL_FILE_BASE_URL = 'https://fahadtahir.pos4africa.com/index.php/reports/generate/detailed_sales'
 ALL_TIME_REPORT = ''
 TODAY_REPORT = f'{EXCEL_FILE_BASE_URL}?report_type=simple&report_date_range_simple=TODAY&sale_type=all&with_time=1&excel_export=0&export_excel=1'
-SYNCRHONIZER_LOG_FILE = './_syncrhonizer.json'
+DSR_ABS_PATH = '/home/ubuntu/Pos4africa_Data_Analysis/Excels/DSR.xlsx' if sys.platform == 'linux' else 'C://Users/Tahir General/Documents/Projects/Data Analytics/Excels/DSR.xlsx'
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+TRANSFER_CMD = ['python3', '-m', 'pos4africa.main'] if sys.platform == 'linux' else ['python', '-m', 'pos4africa.main']
 
 class Syncrhonizer:
-      def __init__(self):
-            self.current_hashed = ""
-
-      def _dedup_date_json_log(self) -> None:
-            with open(SYNCRHONIZER_LOG_FILE, 'r') as sync_r:
-                  str_log = sync_r.read()
-                  if str_log.strip():
-                        return dict(json.loads(str_log))
-                  return {}
-
-      def _write_json_log_file(self, log: dict) -> None:
-            with open(SYNCRHONIZER_LOG_FILE, 'w') as sync_w:
-                  log[datetime.now().strftime('%Y-%m-%d %H:%M:%S')] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                  log['last_sync'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                  sync_w.write(json.dumps(log))
-
-      def _create_json_log_file(self) -> None:
-            with open(SYNCRHONIZER_LOG_FILE, 'w') as sync_w:
-                  log = {
-                        'last_sync': None
-                  }
-                  sync_w.write(json.dumps(log))
-
       async def init(self) -> None:
-            print('Starting the synchronizer...')
+            logger.info('Starting the synchronizer...')
             while True:
-                  print('Checking if it is time to fetch the Excel file... time:', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                  if self._is_time():
-                        print('It is time to fetch the Excel file. Fetching...')
-                        report = await self._fetch_excel_file()
-                        if report:
-                              self._overide_excel_file('./Excels/DSR.xlsx', report)
-                              print('Excel file downloaded successfully.')
-                              hashed_report = sha256(report).hexdigest()
-                              if self.current_hashed == hashed_report:
-                                    print('Nothing Changes. Skipping data transfer...')
-                                    await asyncio.sleep(250)
-                                    continue
-                              
-                              self.current_hashed = hashed_report
-                              print('Initiating data transfer from Excel to Supabase...')
-                              try:
-                                    if sys.platform == 'win32':
-                                          subprocess.run('python -m pos4africa.main', shell=True)
-                                    else: subprocess.run('python3 -m pos4africa.main', shell=True)
-                                    print('Data transfer completed.')
-                              except Exception as exc:
-                                    print('Data transfer failed with error:', str(exc))
-                        else:
-                              print('Failed to download the Excel file.')
-                  else:
-                        print('It is not time to fetch the Excel file yet. Waiting...')
+                  logger.info('Fetching and downloading excel file...')
+                  report = await self._fetch_excel_file()
+                  if not report:
+                        logger.warning('Failed to download the Excel file.')
+                        continue
+                  
+                  self._overide_excel_file(DSR_ABS_PATH, report)
+                  logger.info('Excel file downloaded successfully.')
+                  logger.info('Initiating data transfer from Excel to Supabase...')
+                  self.run_ingestion()
+
+                  logger.info('Sleeping for 250s aproximately 4.7m ....')
                   await asyncio.sleep(250)
 
       async def _fetch_excel_file(self):
             async with PosConnector(None, None) as connector:
                   resp = await connector.session.get(TODAY_REPORT)
-                  xlsx = resp.content
-                  return xlsx
-
+                  return resp.content
+      
       def _overide_excel_file(self, file_path: str, file_data: str) -> None:
             with open(file_path, 'wb') as xlsx_f:
                   xlsx_f.write(file_data)
-            
-      def _is_time(self) -> bool:
-            now = datetime.now()
-            print("Time: ", now)          
-            return True
-
+      
+      def run_ingestion(self):
+            """
+                  Run the external data transfer script.
+                  Returns True if the subprocess succeeded, False otherwise.
+            """
+            try:
+                  subprocess.run(TRANSFER_CMD, shell=True)
+                  logger.info("Ingestion completed successfully")
+                  return True
+            except subprocess.CalledProcessError as e:
+                  logger.error(f"Ingestion failed", error=e)
+                  logger.error(f"Transfer subprocess failed with exit code {e.returncode}")
+                  logger.error(f"STDOUT: {e.stdout}")
+                  logger.error(f"STDERR: {e.stderr}")
+                  return False
 
 async def main() -> None:
       synchronizer = Syncrhonizer()
@@ -112,4 +94,4 @@ if __name__ == '__main__':
       try:
             asyncio.run(main())
       except KeyboardInterrupt:
-            print('Keyboard Interuppted. existing...')
+            logger.info('Keyboard Interuppted. existing...')
