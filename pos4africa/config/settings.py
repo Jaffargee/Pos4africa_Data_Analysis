@@ -19,6 +19,7 @@ class Settings(BaseSettings):
       
       # Excel source of truth
       excel_source_path: str = "./Excels/DSR.xlsx"
+      excel_customer_source_path: str = "./Excels/Customers.xlsx"
       excel_sheet_name: str = "Sheet1"
 
       # ── Worker pool ───────────────────────────────────────────────────────────
