@@ -19,8 +19,9 @@ class Settings(BaseSettings):
       
       # Excel source of truth
       excel_source_path: str = "./Excels/DSR.xlsx"
-      excel_customer_source_path: str = "./Excels/Customers.xlsx"
+      customer_excel_path: str = "./Excels/Customers.xlsx"
       excel_sheet_name: str = "Sheet1"
+      customer_sheet_name: str = "Sheet1"
 
       # ── Worker pool ───────────────────────────────────────────────────────────
       worker_count: int = Field(default=1, ge=1, le=32)

@@ -51,6 +51,7 @@ class ExcelScraper(BaseComponent):
 
             if df.empty:
                   return []
+                  
 
             grouped_sales: list[RawSale] = []
             for _, group in df.groupby("sale_id", sort=True):

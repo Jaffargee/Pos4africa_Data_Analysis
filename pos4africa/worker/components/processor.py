@@ -7,7 +7,7 @@ from pos4africa.worker.components.base import BaseComponent
 from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.models.sale import Sale
 from pos4africa.manager.memory.search_nomalisation import search_
-import re
+import hashlib, json
 
 class Processor(BaseComponent):
 
@@ -98,6 +98,8 @@ class Processor(BaseComponent):
                               sale_id=parsed_sale.pos_sale_id
                         )
 
+            sale_hash = self.generate_hash(json.dumps(parsed_sale.to_dict(), sort_keys=True, separators=(",", ":")))
+
             # ── Build final processed sale ─────────────────────────────────────
             return ProcessedSale(
                   pos_sale_id      = parsed_sale.pos_sale_id,
@@ -114,6 +116,7 @@ class Processor(BaseComponent):
                   is_anonymous_customer = parsed_sale.is_anonymous_customer,
                   items            = items,
                   payments         = payments,
+                  hash             = sale_hash
             )
 
       # ── Helpers ──────────────────────────────────────────────────────────────
@@ -127,3 +130,7 @@ class Processor(BaseComponent):
             if not name:
                   return None
             return await self.memory.ltm.get_accounts_id_by_name(name)
+
+
+      def generate_hash(self, data: str) -> str:
+            return hashlib.sha256(data.encode('utf-8')).hexdigest()

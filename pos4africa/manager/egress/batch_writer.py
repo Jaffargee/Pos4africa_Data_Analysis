@@ -28,6 +28,14 @@ class BatchWriter:
       async def write(self, records: list[dict[str, Any]]) -> int:
             if not records:
                   return 0
+            
+            # 1. Collect ALL sale IDs across the ENTIRE dataset
+            all_sale_ids = {record["pos_sale_id"] for record in records}
+
+            # 2. Sync deleted sales ONCE for the whole dataset (optional, run before chunks)
+            deleted_count = await self._sync_deleted_sales(all_sale_ids)
+            if deleted_count > 0:
+                  log.info("batch_writer.sync_deleted", deleted_count=deleted_count)
 
             total = 0
             for i in range(0, len(records), self._batch_size):
@@ -43,6 +51,43 @@ class BatchWriter:
 
             return total
 
+      async def write_customers(self, customers: list[dict[str, Any]]) -> int:
+            return await self._write_customers(customers)
+      
+      @with_retry_async
+      async def _write_customers(self, customers: list[dict[str, Any]]) -> int:
+            if not customers:
+                  return 0
+
+            customer_result = spb_client.table("customers").upsert(
+                  customers,
+                  on_conflict="pos_customer_id",
+              ).execute()
+            self._raise_on_error(customer_result, "customers")
+
+            return len(customer_result.data) if customer_result.data else 0
+
+      async def _sync_deleted_sales(self, current_sale_ids: set[int]) -> int:
+            existing_sales_result = spb_client.table(self._sales_table).select("pos_sale_id").execute()
+            self._raise_on_error(existing_sales_result, self._sales_table)
+
+            existing_sale_ids = {row["pos_sale_id"] for row in existing_sales_result.data}
+            sales_to_delete = list(existing_sale_ids - current_sale_ids)
+
+            if not sales_to_delete:
+                  return 0
+
+            delete_result = (
+                  spb_client.table(self._sales_table)
+                  .delete()
+                  .in_("pos_sale_id", sales_to_delete)
+                  .execute()
+            )
+            self._raise_on_error(delete_result, self._sales_table)
+
+            return len(sales_to_delete)
+
+
       @with_retry_async
       async def _write_chunk(self, chunk: list[dict[str, Any]]) -> None:
             sales_rows = [self._build_sales_row(record) for record in chunk]
@@ -50,7 +95,7 @@ class BatchWriter:
             item_rows = [
                   self._build_item_row(item, record["pos_sale_id"])
                   for record in chunk
-                  for item in record.get("items", [])
+                  for item in record.get("items", []) if item.get("pos_item_id") != 194
             ]
             payment_rows = [
                   self._build_payment_row(payment, record["pos_sale_id"])
@@ -88,6 +133,7 @@ class BatchWriter:
                   payment_result = spb_client.table(self._sale_payments_table).insert(payment_rows).execute()
                   self._raise_on_error(payment_result, self._sale_payments_table)
 
+
       def _build_sales_row(self, record: dict[str, Any]) -> dict[str, Any]:
             return {
                   "pos_sale_id": record["pos_sale_id"],
@@ -101,6 +147,7 @@ class BatchWriter:
                   "items_net": record.get("items_net", 0),
                   "items_sold": record.get("items_sold", 0),
                   "items_returned": record.get("items_returned", 0),
+                  "hash": record.get("hash", None)
             }
 
       def _build_item_row(self, item: dict[str, Any], sale_id: int) -> dict[str, Any]:

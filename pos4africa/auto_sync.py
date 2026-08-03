@@ -50,6 +50,10 @@ TODAY_REPORT_URL = (
       '?report_type=simple&report_date_range_simple=TODAY&sale_type=all&with_time=1&excel_export=0&export_excel=1'
 )
 
+CUSTOMERS_REPORT_URL = (
+      'https://fahadtahir.pos4africa.com/index.php/customers/excel_export'
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EXCEL_PATH = PROJECT_ROOT / "Excels" / "DSR.xlsx"
 
@@ -78,18 +82,18 @@ class FileSystem:
 
 class DownloadManager:
       
-      async def download_excel(self, url: str, destination: Path) -> None:
+      async def download_excel(self, connector: PosConnector, url: str, destination: Path) -> None:
             try:
-                  async with PosConnector(None, None) as connector:
-                        response = await connector.session.get(url)
-                        if len(response.content) == 0:
-                              raise ValueError(f"Received empty response from {url}")
-                        # Check the byte and ensure it's a valid Excel file (basic check)
-                        if not response.content.startswith(b'PK'):
-                              raise ValueError(f"Downloaded file from {url} does not appear to be a valid Excel file.")
+                  response = await connector.session.get(url)
+                  if len(response.content) == 0:
+                        raise ValueError(f"Received empty response from {url}")
+                  # Check the byte and ensure it's a valid Excel file (basic check)
+                  if not response.content.startswith(b'PK'):
+                        raise ValueError(f"Downloaded file from {url} does not appear to be a valid Excel file.")
 
-                        self.save_excel(response.content, destination)
-                        
+                  self.save_excel(response.content, destination)
+                  logging.info(f"Successfully downloaded and saved Excel file to {destination}")
+                  
             except Exception as e:
                   logging.error(f"Error downloading Excel file from {url}: {e}")
                   raise
@@ -118,24 +122,25 @@ class AutoSync:
 
 
       async def auto_sync(self) -> None:
-            while True:
-                  logging.info("Starting auto-sync process...")
-                  await self._sync_once()
-                  logging.info("Auto-sync process completed. Sleeping for 24 hours...")
-                  await asyncio.sleep(60)  # Sleep for 1 minute for testing; change to 86400 for 24 hours in production
+            async with PosConnector(None, None) as connector:
+                  while True:
+                        logging.info("Starting auto-sync process...")
+                        await self._sync_once(connector=connector)
+                        logging.info("Auto-sync process completed. Sleeping for 24 hours...")
+                        await asyncio.sleep(60)  # Sleep for 1 minute for testing; change to 86400 for 24 hours in production
 
-      async def _sync_once(self) -> None:
+      async def _sync_once(self, connector: PosConnector) -> None:
             excel_path = self.file_system.resolve_excel_path(settings.excel_source_path)
             self.file_system.ensure_excel_file(excel_path)
 
             try:
-                  await self.download_manager.download_excel(self.report, excel_path)
+                  await self.download_manager.download_excel(connector, CUSTOMERS_REPORT_URL, self.file_system.resolve_excel_path(settings.customer_excel_path))
+                  await self.download_manager.download_excel(connector, self.report, excel_path)
                   await self.run_manager()
-                  logging.info(f"Successfully downloaded and saved Excel report to {excel_path}")
             except Exception as e:
                   logging.error(f"Failed to download today's report: {e}. Attempting to download all-time report.")
                   try:
-                        await self.download_manager.download_excel(ALL_REPORT_URL, excel_path)
+                        await self.download_manager.download_excel(connector, ALL_REPORT_URL, excel_path)
                         await self.run_manager()
                         logging.info(f"Successfully downloaded and saved all-time Excel report to {excel_path}")
                   except Exception as e:

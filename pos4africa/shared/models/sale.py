@@ -88,7 +88,10 @@ class Sale(BaseModel):
       # Arrays
       items: list[SaleItem] = []
       payments: list[Payment] = []
-      
+
+      def to_dict(self, exclude_none: bool = False) -> dict:
+            """Converts the model to a Python dictionary, preserving nested items/payments."""
+            return self.model_dump(exclude_none=exclude_none, mode="json")
 
 # ── Stage 3 output: processor-ready, IDs resolved ────────────────────────────
 
@@ -137,6 +140,8 @@ class ProcessedSale(BaseModel):
       items: list[ProcessedSaleItem] = []
       payments: list[ProcessedPayment] = []
 
+      hash: str
+
       def to_db_dict(self) -> dict:
             """Serialise to the live Supabase table schema."""
             return {
@@ -151,6 +156,7 @@ class ProcessedSale(BaseModel):
                   "items_net": self.items_net,
                   "items_sold": self.items_sold,
                   "items_returned": self.items_returned,
+                  "hash": self.hash,
                   "items": [
                         {
                               "pos_sale_id": item.pos_sale_id,
