@@ -1834,5 +1834,23 @@
         "first_name": "UMRATU",
         "last_name": "HUSSAINI",
         "hash": "76bd8e965ba48d9f92bab26a09cd712ef7c2975aad1d753240a017ec3153fe2c"
+    },
+    "323": {
+        "pos_customer_id": 323,
+        "first_name": "MAIMUNA",
+        "last_name": "HASSAN",
+        "hash": "5a525cc735ca0a383895971d2fd342415e18515707d68c63edfc98015ef8b171"
+    },
+    "324": {
+        "pos_customer_id": 324,
+        "first_name": "HAJ SUMAYYA",
+        "last_name": null,
+        "hash": "b6592af99a0427333c5dd5ff363a32b63660e5088528ceadf770765fe8bdc0cf"
+    },
+    "325": {
+        "pos_customer_id": 325,
+        "first_name": "ZAHRA LATEST",
+        "last_name": null,
+        "hash": "c9274c61a15a034b82f9cf2a4f17698c9259085068108de045cb30783f30fc60"
     }
 }

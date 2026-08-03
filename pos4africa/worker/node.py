@@ -102,7 +102,7 @@ class WorkerNode:
                               error=str(exc),
                         )
 
-            processed_sales = await self.reconcile_and_filter(processed_sales)
+            # processed_sales = await self.reconcile_and_filter(processed_sales)
             inserted = await self._writer.write(processed_sales)
 
             summary = {
