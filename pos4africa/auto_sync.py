@@ -33,7 +33,7 @@ paths in the codebase.
 from pathlib import Path
 import asyncio
 
-from pos4africa.worker.components.connector import PosConnector
+from pos4africa.worker.components.network.connector import PosConnector
 from pos4africa.config.settings import settings
 from pos4africa.manager.host import HostManager
 from pos4africa.shared.utils.logger import configure_logging

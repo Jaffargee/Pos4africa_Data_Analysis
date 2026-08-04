@@ -13,7 +13,7 @@ from pos4africa.config.settings import settings
 from pos4africa.shared.utils.retry import with_retry_async
 from pos4africa.worker.components.base import BaseComponent
 from pos4africa.manager.memory.store import MemoryStore
-from legacy.rate_limiter import RateLimiter
+from pos4africa.shared.utils.rate_limiter import RateLimiter
 
 
 class PosConnector(BaseComponent):
