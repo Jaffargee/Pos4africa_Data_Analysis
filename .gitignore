@@ -4,7 +4,7 @@ __pycache__/
 *.pyd
 .env
 .pytest_cache/
-.gitignore
-.customers.sync.json
-.Excels
-.legacy
+./.gitignore
+./customers.sync.json
+./Excels
+./legacy
