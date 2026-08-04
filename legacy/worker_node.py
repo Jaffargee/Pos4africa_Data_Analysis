@@ -33,7 +33,7 @@ from pos4africa.worker.components.dedup_guard import DedupGuard
 from legacy.health_reporter import HealthReporter
 
 # IMPORTS NODE DEPENDENCIES
-from pos4africa.manager.memory.store import MemoryStore
+from legacy.memory.store import MemoryStore
 from legacy.redis_client import get_redis, RedisClient
 from pos4africa.shared.models.job import ScrapeJob
 

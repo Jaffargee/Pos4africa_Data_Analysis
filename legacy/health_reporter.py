@@ -18,7 +18,7 @@ import orjson
 
 from pos4africa.config.settings import settings
 from pos4africa.worker.components.base import BaseComponent
-from pos4africa.manager.memory.store import MemoryStore
+from legacy.memory.store import MemoryStore
 
 _HEALTH_TTL = 60  # seconds — node is considered dead after this
 

@@ -6,12 +6,13 @@ from typing import Any
 
 import pandas as pd
 
-from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.models.sale import RawPayment, RawSale, RawSaleItem
 from pos4africa.worker.components.base import BaseComponent
+from pos4africa.manager.memory.store import MemoryStore
+from pos4africa.worker.components.extractors.extractor import Extractor
 
 
-class ExcelScraper(BaseComponent):
+class SaleExtractor(BaseComponent, Extractor):
       """
       Excel-backed alternative to the HTML Scraper.
 
@@ -28,13 +29,8 @@ class ExcelScraper(BaseComponent):
       def __init__(self, node_id: str, memory: MemoryStore):
             super().__init__(node_id=node_id, memory=memory)
 
-      async def run(
-            self,
-            excel_path: str | Path,
-            sale_id: int | None = None,
-            sheet_name: str | int = 0,
-      ) -> list[RawSale] | RawSale | None:
-            sales = self._scrape(excel_path=excel_path, sheet_name=sheet_name)
+      async def run(self, excel_path: str | Path, sale_id: int | None = None, sheet_name: str | int = 0) -> list[RawSale] | RawSale | None:
+            sales = self._extract(excel_path=excel_path, sheet_name=sheet_name)
 
             if sale_id is None:
                   return sales
@@ -45,12 +41,20 @@ class ExcelScraper(BaseComponent):
 
             return None
 
-      def _scrape(self, excel_path: str | Path, sheet_name: str | int = 0) -> list[RawSale]:
+      def _extract(self, excel_path: str | Path, sheet_name: str | int = 0) -> list[RawSale]:
             df = pd.read_excel(excel_path, sheet_name=sheet_name)
             df = self._normalise_dataframe(df)
 
+
             if df.empty:
                   return []
+            
+            if "sale_id" not in df.columns:
+                  raise ValueError("Expected a 'Sale Id' column in the Excel source.")
+
+            df["sale_id"] = df["sale_id"].apply(self._parse_sale_id)
+            df = df.dropna(subset=["sale_id"]).copy()
+            df["sale_id"] = df["sale_id"].astype(int)
                   
 
             grouped_sales: list[RawSale] = []
@@ -60,20 +64,6 @@ class ExcelScraper(BaseComponent):
                         grouped_sales.append(sale)
 
             return grouped_sales
-
-      def _normalise_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-            df = df.copy()
-            df.columns = [self._normalise_column_name(col) for col in df.columns]
-            df = df.rename(columns=self._column_map())
-
-            if "sale_id" not in df.columns:
-                  raise ValueError("Expected a 'Sale Id' column in the Excel source.")
-
-            df["sale_id"] = df["sale_id"].apply(self._parse_sale_id)
-            df = df.dropna(subset=["sale_id"]).copy()
-            df["sale_id"] = df["sale_id"].astype(int)
-
-            return df
 
       def _build_sale(self, group: pd.DataFrame) -> RawSale | None:
             if group.empty:
@@ -154,40 +144,12 @@ class ExcelScraper(BaseComponent):
             match = re.search(r"\d+", str(value).strip())
             return int(match.group()) if match else None
 
-      def _stringify(self, value: Any) -> str | None:
-            if pd.isna(value):
-                  return None
-            text = str(value).strip()
-            return text or None
-
-      def _stringify_number(self, value: Any) -> str | None:
-            if pd.isna(value):
-                  return None
-
-            if isinstance(value, str):
-                  text = value.strip()
-                  return text or None
-
-            if isinstance(value, float) and value.is_integer():
-                  return str(int(value))
-
-            return str(value)
-
-      def _clean_string(self, value: Any) -> str | None:
-            if pd.isna(value):
-                  return None
-            text = re.sub(r"\s+", " ", str(value)).strip()
-            return text or None
-
       def _normalise_payment_amount(self, amount: str) -> str:
             compact = amount.replace(" ", "")
             compact = compact.replace("N", "").replace("₦", "")
             if compact.startswith("--"):
                   compact = compact[1:]
             return compact
-
-      def _normalise_column_name(self, column: Any) -> str:
-            return re.sub(r"[^a-z0-9]+", "_", str(column).strip().lower()).strip("_")
 
       def _column_map(self) -> dict[str, str]:
             return {

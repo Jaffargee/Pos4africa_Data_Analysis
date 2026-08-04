@@ -1,6 +1,6 @@
 from pos4africa.manager.egress.syncer import Syncer
 from pos4africa.manager.host import HostManager
-from pos4africa.worker.components.excel_scraper import ExcelScraper
+from pos4africa.worker.components.extractors.sale_extractor import SaleExtractor
 from pos4africa.config.settings import settings
 from .auto_sync import DownloadManager, TODAY_REPORT_URL
 from pathlib import Path

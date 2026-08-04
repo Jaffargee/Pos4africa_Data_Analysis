@@ -38,7 +38,7 @@ class LongTermMemory:
                         pass
 
       async def _sync_reference_data(self) -> None:
-            from pos4africa.worker.components import Sync
+            from pos4africa.worker.components.sync import Sync
 
             customers = await Sync.fetch_customers() or []
             accounts = await Sync.fetch_accounts() or []

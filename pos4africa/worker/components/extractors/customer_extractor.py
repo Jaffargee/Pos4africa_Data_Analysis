@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 
-from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.models.customer import Customer
 from pos4africa.worker.components.base import BaseComponent
-from pos4africa.config.settings import settings
-import os
+from pos4africa.manager.memory.store import MemoryStore
+from pos4africa.worker.components.extractors.extractor import Extractor
 
-class CustomerScraper(BaseComponent):
+class CustomerExtractor(BaseComponent, Extractor):
       
       def __init__(self, node_id: str, memory: MemoryStore):
-            super().__init__(node_id=node_id, memory=memory)
+            super().__init__(node_id=node_id, memory=MemoryStore)
 
       async def run(self, excel_path: str | Path, sheet_name: str | int = 0) -> None:
-            customers = self._scrape(excel_path=excel_path, sheet_name=sheet_name)
+            customers = self._extract(excel_path=excel_path, sheet_name=sheet_name)
             return customers
       
-      def _scrape(self, excel_path: str | Path, sheet_name: str | int = 0) -> list[Customer]:
+      def _extract(self, excel_path: str | Path, sheet_name: str | int = 0) -> list[Customer]:
             df = pd.read_excel(excel_path, sheet_name=sheet_name)
             df = self._normalise_dataframe(df)
 
@@ -52,16 +49,7 @@ class CustomerScraper(BaseComponent):
             )
             return customer
 
-      def _normalise_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-            df = df.copy()
-            df.columns = [self._normalise_column_name(col) for col in df.columns]
-            df = df.rename(columns=self._column_mapping())
-            return df
-
-      def _normalise_column_name(self, column: Any) -> str:
-            return re.sub(r"[^a-z0-9]+", "_", str(column).strip().lower()).strip("_")
-
-      def _column_mapping(self) -> dict[str, str]:
+      def _column_map(self) -> dict[str, str]:
             return {
                   "customer_id": "pos_customer_id",
                   "first_name": "first_name",

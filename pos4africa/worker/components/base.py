@@ -1,10 +1,8 @@
 
 from __future__ import annotations
 
-import asyncio
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any
-import structlog
 
 from pos4africa.shared.utils.logger import get_logger
 from pos4africa.manager.memory.store import MemoryStore

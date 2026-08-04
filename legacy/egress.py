@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from legacy.rabbitmq import get_connection, get_channel
 from pos4africa.worker.components.base import BaseComponent
-from pos4africa.manager.memory.store import MemoryStore
+from legacy.memory.store import MemoryStore
 from pos4africa.config.settings import settings
 
 from aio_pika import DeliveryMode, Message

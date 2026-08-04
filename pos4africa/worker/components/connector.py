@@ -3,29 +3,22 @@ connector.py — PosConnector
 
 Responsibilities:
   1. Maintain an authenticated httpx session (login + cookie refresh)
-  2. Paginate through the sales listing for a given date range
-  3. Write each raw HTML page into short-term memory
-  4. Respect the per-node rate limiter
 """
 
 from __future__ import annotations
-
-from collections.abc import AsyncIterator
-from datetime import date
-from uuid import uuid4
 
 import httpx
 
 from pos4africa.config.settings import settings
 from pos4africa.shared.utils.retry import with_retry_async
 from pos4africa.worker.components.base import BaseComponent
-from legacy.rate_limiter import RateLimiter
 from pos4africa.manager.memory.store import MemoryStore
+from legacy.rate_limiter import RateLimiter
 
 
 class PosConnector(BaseComponent):
       def __init__(self, node_id: str, memory: MemoryStore) -> None:
-            super().__init__(node_id, memory)
+            super().__init__(node_id, memory=memory)
             self._session: httpx.AsyncClient | None = None
             self._rate_limiter = RateLimiter(
                   rps=settings.rate_limit_rps,

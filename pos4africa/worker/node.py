@@ -13,9 +13,9 @@ from pos4africa.manager.egress import batch_writer
 from pos4africa.manager.egress.batch_writer import BatchWriter
 from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.utils.logger import get_logger
-from legacy.dedup_guard import DedupGuard
-from pos4africa.worker.components.excel_scraper import ExcelScraper
-from pos4africa.worker.components.customer_scraper import CustomerScraper
+from pos4africa.worker.components.dedup_guard import DedupGuard
+from pos4africa.worker.components.extractors.sale_extractor import SaleExtractor
+from pos4africa.worker.components.extractors.customer_extractor import CustomerExtractor
 from pos4africa.worker.components.parser import Parser
 from pos4africa.worker.components.processor import Processor
 from pos4africa.manager.egress.syncer import Syncer
@@ -37,7 +37,7 @@ class WorkerNode:
             return self._node_id
 
       async def start(self) -> None:
-            self._memory = MemoryStore(self._node_id)
+            self._memory = MemoryStore()
             await self._memory.initialise()
             self._running = True
             self.log.info("worker_node.started", excel_source_path=settings.excel_source_path)
@@ -54,8 +54,8 @@ class WorkerNode:
 
             syncer = Syncer()
             dedup_guard = DedupGuard(self._node_id, self._memory)
-            scraper = ExcelScraper(self._node_id, self._memory)
-            customerScraper = CustomerScraper(self._node_id, self._memory)
+            scraper = SaleExtractor(self._node_id, self._memory)
+            customerScraper = CustomerExtractor(self._node_id, self._memory)
             parser = Parser(self._node_id, self._memory)
             processor = Processor(self._node_id, self._memory)
 

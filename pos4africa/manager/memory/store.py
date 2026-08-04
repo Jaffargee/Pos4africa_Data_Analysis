@@ -4,8 +4,7 @@ from .long_term import LongTermMemory
 
 
 class MemoryStore:
-      def __init__(self, node_id: str) -> None:
-            self.node_id = node_id
+      def __init__(self) -> None:
             self.ltm = LongTermMemory()
 
       async def initialise(self) -> None:

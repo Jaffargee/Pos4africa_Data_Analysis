@@ -6,7 +6,6 @@ from decimal import Decimal, InvalidOperation
 
 from dateutil import parser as dateutil_parser
 
-from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.models.sale import (
       Payment,
       RawPayment,
@@ -16,6 +15,7 @@ from pos4africa.shared.models.sale import (
       SaleItem,
 )
 from pos4africa.worker.components.base import BaseComponent
+from pos4africa.manager.memory.store import MemoryStore
 
 _DATE_FORMATS = [
       "%m/%d/%Y-%I:%M %p",
@@ -28,7 +28,7 @@ _DATE_FORMATS = [
 
 class Parser(BaseComponent):
       def __init__(self, node_id: str, memory: MemoryStore):
-            super().__init__(node_id, memory)
+            super().__init__(node_id, memory=memory)
 
       async def run(self, raw_sale: RawSale) -> Sale | None:
             return self._parse(raw_sale)
