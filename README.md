@@ -1,27 +1,57 @@
 # Pos4africa_Data_Analysis
 
-An ETL pipeline that pulls sales and customer data out of a [pos4africa.com](https://pos4africa.com)
-POS instance and syncs it into Supabase, plus a couple of standalone Excel reporting scripts.
+An ETL pipeline that pulls sales and customer Excel exports from a pos4africa.com
+POS instance, normalizes and deduplicates them, and upserts the results into
+Supabase for reporting and analytics. The project also contains a couple of
+standalone Excel reporting scripts.
 
-Built for a retail/textile business's POS reporting: nightly (or manual) Excel exports from the
-POS system get parsed, deduplicated, hashed, and upserted into Supabase, where they can be
-queried/dashboarded from.
+This repository is targeted at small/medium retail businesses using the
+Pos4Africa POS who need nightly or on-demand synchronization of sales and
+customer records into a SQL-backed analytics store.
 
-## Requirements
+## Stack
+- Language(s): Python 3.11+
+- Runtime / tooling: plain Python modules, pip / requirements.txt
+- Notable libraries: pydantic (settings & models), requests (HTTP), openpyxl / pandas
+  (Excel parsing), supabase client (Supabase writes)
 
-- Python 3.11+ (the codebase uses `enum.StrEnum`, added in 3.11)
-- A Supabase project with `sales`, `customers`, and `accounts` tables
-- Access to a pos4africa POS instance that can export "Detailed Sales Report" and "Customers"
-  Excel reports
-
-## Setup
+## Quickstart — run one pipeline pass
+1. Install dependencies and create a local env file:
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # then fill in the values below
+cp .env.example.env .env
+# Edit .env with your POS and Supabase credentials
 ```
 
-`.env`:
+2. Place Excel exports from your POS into the Excels/ directory:
+- `Excels/DSR.xlsx` — Detailed Sales Report (DSR)
+- `Excels/Customers.xlsx` — Customers export
+
+3. Run the pipeline (single pass):
+
+```bash
+python -m pos4africa.main
+```
+
+This reads the two Excel files, parses and deduplicates sales and customer
+records, and upserts changed records into the configured Supabase tables.
+
+Optional: download and run the auto-sync loop which fetches reports from the
+POS and re-runs the pipeline on a schedule:
+
+```bash
+python -m pos4africa.auto_sync        # defaults to today's report
+python -m pos4africa.auto_sync all    # pulls the all-time report
+```
+
+Note: the default sync interval in `auto_sync.py` is short (use a real
+interval or run from cron for production use).
+
+## Configuration
+Primary configuration is provided via environment variables read by
+`pos4africa/config/settings.py`. Minimal required variables (set these in
+`.env`):
 
 ```
 POS_BASE_URL=https://yourstore.pos4africa.com
@@ -31,101 +61,60 @@ SUPABASE_URL=
 SUPABASE_KEY=
 ```
 
-See `pos4africa/config/settings.py` for the full list of configurable settings (batch sizes,
-rate limits, retry/circuit-breaker tuning, table names, etc.) — everything has a sane default
-except the five values above.
+See `pos4africa/config/settings.py` for the full list of tuning knobs:
+- Excel input paths & sheet names
+- POS request timeouts, paging and rate limits
+- Worker pool / batch sizing
+- Supabase table names (sales, customers, accounts)
+- Circuit-breaker and retry settings
+- Logging / metrics configuration
 
-## Running it
+## Project layout
+```
+pos4africa/                      # main package
+├── main.py                       # CLI entrypoint — runs one pipeline pass
+├── auto_sync.py                  # optional entrypoint — download reports + loop
+├── config/                       # configuration (pydantic settings)
+│   └── settings.py               # all env-backed settings and defaults
+├── infra/                        # infra helpers (Supabase client, etc.)
+├── manager/                      # process management, batching, host wrapper
+├── shared/                       # pydantic models and shared utilities
+└── worker/                       # pipeline node + components
+    └── components/               # excel_scraper, parser, processor, dedup_guard
 
-```bash
-python -m pos4africa.main
+Excels/                           # input Excel files (DSR.xlsx, Customers.xlsx)
+requirements.txt                   # Python dependencies
+.env.example.env                   # example env file (copy to .env)
+README.md                          # this file
+image.png                          # project image used in README
 ```
 
-This runs a **single pass** of the pipeline:
+How it fits together: `pos4africa.main` instantiates a single WorkerNode that
+runs a pipeline of components: ExcelScraper → Parser → Processor → Egress
+(batch writer / syncer) which pushes to Supabase. `auto_sync.py` wraps this
+flow with a downloader and a loop for automatic operation.
 
-```
-Excels/DSR.xlsx        ──▶ ExcelScraper ──▶ Parser ──▶ Processor ──▶ Supabase (sales)
-Excels/Customers.xlsx  ──▶ CustomerScraper ──▶ Syncer ──▶ Supabase (customers)
-```
+## Useful scripts
+- `dsr.py` — standalone script that builds a styled Excel analytics dashboard
+- `tahir/exldt.py` — additional Excel utilities (see the script for details)
+- `pos4africa/tester.py` — small helper used during development
 
-It expects two files to already exist:
+## Known limitations & notes
+- There are unused/discarded files and a second, partly-implemented
+  distributed architecture (Redis, RabbitMQ, PosConnector) in the tree — the
+  single-node Excel pipeline is the one exercised by `main.py`.
+- `dsr.py` contains hardcoded paths and is not wired to `settings.py`.
+- `customers.sync.json` (if present locally) contains real customer data and
+  should not be committed.
+- The default interval and retry settings in `auto_sync.py` are set for
+  fast iteration — tune for production use.
 
-| File | Purpose | Configured via |
-|---|---|---|
-| `Excels/DSR.xlsx` | "Detailed Sales Report" export from the POS system | `excel_source_path` |
-| `Excels/Customers.xlsx` | Customer list export from the POS system | `customer_excel_path` |
-
-### What happens on each run
-
-1. **Sales**: `ExcelScraper` reads `DSR.xlsx`, groups line items by `Sale Id`, and parses payment
-   strings (e.g. `"Cash: ₦5,000, POS: ₦2,000"`) into structured records. Each sale is deduplicated,
-   parsed, and processed into a DB-ready shape with a content hash.
-2. **Reconciliation**: before writing, the pipeline fetches existing `(pos_sale_id, hash)` pairs
-   from Supabase and only upserts sales whose hash actually changed — unchanged historical sales
-   aren't rewritten.
-3. **Customers**: `CustomerScraper` reads `Customers.xlsx`, hashes each customer's identity
-   fields, diffs against a local `customers.sync.json` cache, and only pushes customers whose
-   data changed.
-4. A run summary (`loaded`, `inserted`, `inserted_customers`, `duplicates`, `failed`) is logged
-   at the end.
-
-### Keeping the Excel files fresh
-
-`auto_sync.py` is a separate, optional entrypoint that downloads the latest report exports
-directly from the POS system's URLs and re-runs the pipeline on a loop:
-
-```bash
-python -m pos4africa.auto_sync        # defaults to today's report
-python -m pos4africa.auto_sync all    # pulls the all-time report instead
-```
-
-> **Note:** the sync interval in `auto_sync.py` is currently set to 60 seconds ("for testing" per
-> the inline comment) — change this to a real interval (e.g. once daily) or drive it from cron /
-> a task scheduler before running it unattended.
-
-## Project structure
-
-```
-pos4africa/
-├── main.py                    # entrypoint — runs one pipeline pass
-├── auto_sync.py                # optional entrypoint — downloads reports + loops the pipeline
-├── config/settings.py           # all configuration (env-backed via pydantic-settings)
-├── manager/
-│   ├── host.py                  # HostManager — wraps the single worker node
-│   ├── egress/
-│   │   ├── batch_writer.py       # writes processed sales/customers to Supabase
-│   │   └── syncer.py             # local JSON cache + diffing for customer records
-│   └── memory/                  # long-term memory store used across a run
-├── worker/
-│   ├── node.py                  # WorkerNode — the actual pipeline used by main.py
-│   └── components/
-│       ├── excel_scraper.py      # reads DSR.xlsx → RawSale
-│       ├── customer_scraper.py   # reads Customers.xlsx → Customer
-│       ├── parser.py             # RawSale → typed Sale
-│       ├── processor.py          # Sale → ProcessedSale (DB-ready, hashed)
-│       └── dedup_guard.py        # skips sales already seen this run
-├── shared/
-│   ├── models/                  # pydantic models: sale, customer, account, job
-│   └── utils/                   # logging, hashing, retry, batch processing
-└── infra/
-    └── supabase_client.py        # shared Supabase client instance
-
-dsr.py             # standalone script — builds a styled Excel analytics dashboard
-tahir/exldt.py     # standalone Excel-related script (see script for details)
-Excels/            # input Excel files (DSR.xlsx, Customers.xlsx)
-```
-
-## Known limitations
-
-- `worker/worker_node.py`, `manager/scheduler.py`, `infra/redis_client.py`,
-  `infra/rabbitmq.py`, and related files implement a second, **unused** distributed
-  architecture (Redis-backed job queue, HTML scraping via `PosConnector`, RabbitMQ egress,
-  circuit breaker) that isn't wired into `main.py`. The pipeline that actually runs is the
-  single-node, Excel-based one described above. See `CLEANUP.md` if present, or treat those
-  files as candidates for removal if you're not planning to build out the distributed version.
-- `dsr.py` has a hardcoded local file path and isn't parameterized via `config/settings.py` yet.
-- `customers.sync.json` contains real customer data and should be excluded from version control.
+## Contributing
+This repository is currently maintained as an internal project. If you plan
+to extend it:
+- Use Python 3.11+ (StrEnum is used in the codebase)
+- Add tests for parsing and deduplication logic before changing processing
+  behavior
 
 ## License
-
-Internal/private project — no license specified.
+Internal / private — no license specified.
