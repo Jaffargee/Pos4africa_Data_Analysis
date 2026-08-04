@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from bs4 import BeautifulSoup
 
-from pos4africa.infra.redis_client import RedisClient
+from legacy.redis_client import RedisClient
 from pos4africa.shared.utils.logger import get_logger
 from pos4africa.worker.components.base import BaseComponent
 from pos4africa.worker.memory.store import MemoryStore

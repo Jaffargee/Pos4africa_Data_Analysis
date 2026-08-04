@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pos4africa.infra.rabbitmq import get_connection, get_channel
+from legacy.rabbitmq import get_connection, get_channel
 from pos4africa.worker.components.base import BaseComponent
 from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.config.settings import settings

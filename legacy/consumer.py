@@ -23,7 +23,7 @@ from aio_pika.abc import AbstractIncomingMessage
 
 from pos4africa.config.settings import settings
 from pos4africa.manager.egress.batch_writer import BatchWriter
-from pos4africa.shared.utils.circuit_breaker import (
+from legacy.circuit_breaker import (
       CircuitBreaker,
       CircuitBreakerConfig,
       CircuitBreakerError,

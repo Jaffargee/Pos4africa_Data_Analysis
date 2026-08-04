@@ -5,3 +5,5 @@ __pycache__/
 .env
 .pytest_cache/
 .gitignore
+.customers.sync.json
+.Excels

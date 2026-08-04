@@ -25,16 +25,16 @@ from __future__ import annotations
 
 # IMPORTS NODE COMPONENTS
 from pos4africa.worker.components.connector import PosConnector
-from pos4africa.worker.components.scraper import Scraper
+from legacy.scraper import Scraper
 from pos4africa.worker.components.parser import Parser
 from pos4africa.worker.components.processor import Processor
-from pos4africa.worker.components.egress import WorkerEgress
+from legacy.egress import WorkerEgress
 from pos4africa.worker.components.dedup_guard import DedupGuard
-from pos4africa.worker.components.health_reporter import HealthReporter
+from legacy.health_reporter import HealthReporter
 
 # IMPORTS NODE DEPENDENCIES
 from pos4africa.manager.memory.store import MemoryStore
-from pos4africa.infra.redis_client import get_redis, RedisClient
+from legacy.redis_client import get_redis, RedisClient
 from pos4africa.shared.models.job import ScrapeJob
 
 import asyncio

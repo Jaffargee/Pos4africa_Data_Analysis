@@ -12,8 +12,8 @@ import asyncio
 
 import orjson
 
-from pos4africa.infra.redis_client import get_redis
-from pos4africa.manager.registry import WorkerRegistry
+from legacy.redis_client import get_redis
+from legacy.registry import WorkerRegistry
 from pos4africa.shared.utils.logger import get_logger
 
 log = get_logger(__name__)

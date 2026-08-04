@@ -13,7 +13,7 @@ from pos4africa.manager.egress import batch_writer
 from pos4africa.manager.egress.batch_writer import BatchWriter
 from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.utils.logger import get_logger
-from pos4africa.worker.components.dedup_guard import DedupGuard
+from legacy.dedup_guard import DedupGuard
 from pos4africa.worker.components.excel_scraper import ExcelScraper
 from pos4africa.worker.components.customer_scraper import CustomerScraper
 from pos4africa.worker.components.parser import Parser

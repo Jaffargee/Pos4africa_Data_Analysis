@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from pos4africa.shared.utils.hasher import sale_fingerprint, html_fingerprint
+from legacy.hasher import sale_fingerprint, html_fingerprint
 from pos4africa.worker.components.base import BaseComponent
 from pos4africa.manager.memory.store import MemoryStore
 

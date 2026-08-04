@@ -21,7 +21,7 @@ import hashlib
 from datetime import date, timedelta
 
 from pos4africa.config.settings import settings
-from pos4africa.manager.registry import WorkerRegistry
+from legacy.registry import WorkerRegistry
 from pos4africa.shared.models.job import ScrapeJob
 from pos4africa.shared.utils.logger import get_logger
 import math

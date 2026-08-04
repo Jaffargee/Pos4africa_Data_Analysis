@@ -1,4 +1,4 @@
-from pos4africa.infra.redis_client import get_redis, RedisClient
+from legacy.redis_client import get_redis, RedisClient
 from pos4africa.config import settings
 
 class JobProducer:
