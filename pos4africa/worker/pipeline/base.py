@@ -36,5 +36,5 @@ class BaseComponent(ABC):
             self.on_error = on_error
 
       @abstractmethod
-      def run(self, ctx: PipelineContext) -> None:
+      async def run(self, ctx: PipelineContext) -> None:
             pass
