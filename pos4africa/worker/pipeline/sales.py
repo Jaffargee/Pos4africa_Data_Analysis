@@ -6,10 +6,14 @@ from pos4africa.worker.components.processor import Processor
 from pos4africa.config.settings import settings
 from pos4africa.infra.supabase_client import spb_client
 from pos4africa.manager.egress.batch_writer import BatchWriter
+from pos4africa.shared.utils.logger import get_logger
 
 from typing import Any
 
 class SalesSyncer(BaseComponent):
+      def __init__(self):
+            self.log = get_logger(__name__)
+
       async def run(self, ctx: PipelineContext) -> None:
             writer = BatchWriter()
             dedup_guard = DedupGuard(ctx.node_id, ctx.memory)
@@ -17,6 +21,7 @@ class SalesSyncer(BaseComponent):
             parser = Parser(ctx.node_id, ctx.memory)
             processor = Processor(ctx.node_id, ctx.memory)
 
+            self.log.bind(node_id=ctx.node_id)
 
             raw_sales = await sale_extractor.run(
                   excel_path=settings.excel_source_path,
@@ -54,8 +59,9 @@ class SalesSyncer(BaseComponent):
                               error=str(exc),
                         )
 
-            # processed_sales = await self.reconcile_and_filter(processed_sales)
-            inserted = await writer.write(processed_sales)
+            sales_to_process = await self.reconcile_and_filter(processed_sales)
+            inserted = await writer.write(sales_to_process)
+            # inserted = await writer.write(processed_sales)
 
             ctx.metrics["inserted"] = inserted
 
