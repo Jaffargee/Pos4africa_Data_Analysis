@@ -14,7 +14,7 @@ class Item(BaseModel):
       cost_price: Decimal
       selling_price: Decimal
 
-      quantity: int
+      quantity: float
 
       is_barcoded: bool
       

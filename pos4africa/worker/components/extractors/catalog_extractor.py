@@ -22,6 +22,8 @@ class CatalogExtractor(BaseComponent, Extractor):
             df = pd.read_excel(excel_path, sheet_name=sheet_name)
             df = self._normalise_dataframe(df)
 
+            df['quantity'] = df['quantity'].fillna(0)
+
             if df.empty:
                   return []
 
@@ -33,7 +35,8 @@ class CatalogExtractor(BaseComponent, Extractor):
             return items
 
       def _build_catalog(self, row: pd.Series) -> Item | None:
-            item_id = row.get("item_id")
+            item_id = row.get("pos_item_id")
+
             if pd.isna(item_id):
                   return None
 
@@ -49,14 +52,17 @@ class CatalogExtractor(BaseComponent, Extractor):
             else:
                   is_barcoded = bool(is_barcoded)
 
+            quantity = float(quantity) if not pd.isna(quantity) else 0
+            item_id = int(item_id)
+
             return Item(
-                  item_id=item_id,
+                  pos_item_id=item_id,
                   item_name=item_name,
                   category=category,
                   cost_price=cost_price,
                   selling_price=selling_price,
                   quantity=quantity,
-                  is_barcoded=is_barcoded,
+                  is_barcoded=True,
             )
 
       def _column_map(self):
