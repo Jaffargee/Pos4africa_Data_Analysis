@@ -3,13 +3,20 @@ from pos4africa.manager.host import HostManager
 from pos4africa.worker.components.extractors.catalog_extractor import CatalogExtractor
 from pos4africa.manager.egress.batch_writer import BatchWriter
 from pos4africa.config.settings import settings
-from .auto_sync import DownloadManager, TODAY_REPORT_URL
+from pos4africa.worker.components.network.connector import PosConnector
+from .auto_sync import DownloadManager, ITEMS_REPORT_URL
 from pathlib import Path
 import asyncio
 import json
 
 
 async def main():
+
+      async with PosConnector(None, None) as connector:
+            d_manager = DownloadManager()
+            await d_manager.download_excel(connector, ITEMS_REPORT_URL, Path(settings.catalog_excel_path).resolve())
+
+
       excel_path = Path(settings.catalog_excel_path).resolve()
       node_id = "test_node"
       memory_store = None
@@ -19,10 +26,11 @@ async def main():
 
       print(excel_path, excel_path.is_absolute())
       items = [item.model_dump(mode="json", exclude_none=True) for item in items]
-      print(json.dumps(items, indent=4))
+      # print(json.dumps(items, indent=4))
+      print([item for item in items if item["pos_item_id"] == 86])
 
-      catalog_inserted = await writer.write_catalogs(items)
-      print(catalog_inserted)
+      # catalog_inserted = await writer.write_catalogs(items)
+      # print(catalog_inserted)
 
       # manager = HostManager()
       # await manager.run()

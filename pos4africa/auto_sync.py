@@ -54,6 +54,10 @@ CUSTOMERS_REPORT_URL = (
       'https://fahadtahir.pos4africa.com/index.php/customers/excel_export'
 )
 
+ITEMS_REPORT_URL = (
+      'https://fahadtahir.pos4africa.com/index.php/items/excel_export/'
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EXCEL_PATH = PROJECT_ROOT / "Excels" / "DSR.xlsx"
 
@@ -135,6 +139,7 @@ class AutoSync:
 
             try:
                   await self.download_manager.download_excel(connector, CUSTOMERS_REPORT_URL, self.file_system.resolve_excel_path(settings.customer_excel_path))
+                  await self.download_manager.download_excel(connector, ITEMS_REPORT_URL, self.file_system.resolve_excel_path(settings.catalog_excel_path))
                   await self.download_manager.download_excel(connector, self.report, excel_path)
                   await self.run_manager()
             except Exception as e:

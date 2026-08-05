@@ -12,7 +12,8 @@ class CatalogSyncer(BaseComponent):
             catalog_extractor = CatalogExtractor(ctx.node_id, ctx.memory)
 
             items = await catalog_extractor.run(excel_path=settings.catalog_excel_path, sheet_name=settings.customer_sheet_name)
-            items: list[dict[str, Any]] = [item.model_dump(mode="dict") for item in items]
+            items: list[dict[str, Any]] = [item.model_dump(mode="json", exclude_none=True) for item in items]
+
             inserted_catalog = await writer.write_catalogs(items)
 
             ctx.metrics["inserted_catalog"] = inserted_catalog
