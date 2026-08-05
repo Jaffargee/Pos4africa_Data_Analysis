@@ -119,6 +119,7 @@ class AutoSync:
             self.download_manager = download_manager
             self.file_system = file_system
             self.report = report
+            self.ran_all = False
             self.manager = HostManager()
 
       async def run_manager(self) -> None:
@@ -131,6 +132,9 @@ class AutoSync:
                         logging.info("Starting auto-sync process...")
                         await self._sync_once(connector=connector)
                         logging.info("Auto-sync process completed. Sleeping for 24 hours...")
+                        if self.report == ALL_REPORT_URL:
+                              self.report = TODAY_REPORT_URL
+                              self.ran_all = True
                         await asyncio.sleep(60)  # Sleep for 1 minute for testing; change to 86400 for 24 hours in production
 
       async def _sync_once(self, connector: PosConnector) -> None:
