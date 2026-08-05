@@ -1,13 +1,13 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import Any
 import re
 from pathlib import Path
 import pandas as pd
 
-class Extractor:
+class Extractor(ABC):
 
       def __init__(self):
             pass
@@ -22,7 +22,7 @@ class Extractor:
             return re.sub(r"[^a-z0-9]+", "_", str(column).strip().lower()).strip("_")
 
       @abstractmethod
-      def _column_map(self, columns: dict[str, str]) -> dict[str, str]:
+      def _column_map(self) -> dict[str, str]:
             pass
 
       def _stringify_number(self, value: Any) -> str | None:

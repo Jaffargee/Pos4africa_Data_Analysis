@@ -11,6 +11,9 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pos4africa.shared.utils.logger import get_logger
 from pos4africa.worker.node import WorkerNode
+from pos4africa.worker.pipeline import (
+      SalesSyncer, CustomerSyncer, CatalogSyncer
+)
 
 log = get_logger(__name__)
 
@@ -19,10 +22,17 @@ class HostManager:
       def __init__(self) -> None:
             node_seed = str(uuid5(NAMESPACE_DNS, "excel_node_01"))
             self._node_id = sha256(node_seed.encode()).hexdigest()
-            self._node = WorkerNode(node_id=self._node_id)
+            self._node = (
+                  WorkerNode(node_id=self._node_id, components=[])
+                  .add_component(CustomerSyncer())
+                  .add_component(CatalogSyncer())
+                  .add_component(SalesSyncer())
+            )
 
       async def run(self) -> dict[str, int]:
             log.info("host_manager.starting", mode="excel_single_node", node_id=self._node_id)
+
+            config = []
 
             await self._node.start()
             try:

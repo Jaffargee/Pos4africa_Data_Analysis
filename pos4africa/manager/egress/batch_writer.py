@@ -30,12 +30,12 @@ class BatchWriter:
                   return 0
             
             # 1. Collect ALL sale IDs across the ENTIRE dataset
-            all_sale_ids = {record["pos_sale_id"] for record in records}
+            # all_sale_ids = {record["pos_sale_id"] for record in records}
 
-            # 2. Sync deleted sales ONCE for the whole dataset (optional, run before chunks)
-            deleted_count = await self._sync_deleted_sales(all_sale_ids)
-            if deleted_count > 0:
-                  log.info("batch_writer.sync_deleted", deleted_count=deleted_count)
+            # # 2. Sync deleted sales ONCE for the whole dataset (optional, run before chunks)
+            # deleted_count = await self._sync_deleted_sales(all_sale_ids)
+            # if deleted_count > 0:
+            #       log.info("batch_writer.sync_deleted", deleted_count=deleted_count)
 
             total = 0
             for i in range(0, len(records), self._batch_size):
@@ -53,6 +53,9 @@ class BatchWriter:
 
       async def write_customers(self, customers: list[dict[str, Any]]) -> int:
             return await self._write_customers(customers)
+
+      async def write_catalogs(self, items: list[dict[str, Any]]) -> int:
+            return await self._write_catalogs(items=items)
       
       @with_retry_async
       async def _write_customers(self, customers: list[dict[str, Any]]) -> int:
@@ -66,6 +69,19 @@ class BatchWriter:
             self._raise_on_error(customer_result, "customers")
 
             return len(customer_result.data) if customer_result.data else 0
+      
+      @with_retry_async
+      async def _write_catalogs(self, items: list[dict[str, Any]]) -> int:
+            if not items:
+                  return 0
+
+            item_result = spb_client.table("items").upsert(
+                  items,
+                  on_conflict="pos_item_id",
+              ).execute()
+            self._raise_on_error(item_result, "items")
+
+            return len(item_result.data) if item_result.data else 0
 
       async def _sync_deleted_sales(self, current_sale_ids: set[int]) -> int:
             existing_sales_result = spb_client.table(self._sales_table).select("pos_sale_id").execute()

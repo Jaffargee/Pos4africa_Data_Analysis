@@ -20,6 +20,7 @@ class Settings(BaseSettings):
       # Excel source of truth
       excel_source_path: str = "./Excels/DSR.xlsx"
       customer_excel_path: str = "./Excels/Customers.xlsx"
+      catalog_excel_path: str = "./Excels/Items.xlsx"
       excel_sheet_name: str = "Sheet1"
       customer_sheet_name: str = "Sheet1"
 

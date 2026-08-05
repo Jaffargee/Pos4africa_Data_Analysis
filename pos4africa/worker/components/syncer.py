@@ -72,7 +72,7 @@ class Syncer:
             with open(file_path, "w") as file:
                   json.dump(sorted_data, file, indent=4)
 
-      def sync(self, customers: list[Customer]) -> None:
+      def sync(self, customers: list[Customer]) -> dict:
 
             # Ensure the file exists
             self.ensure_file_exists(self.customers_local_db_file_path)
