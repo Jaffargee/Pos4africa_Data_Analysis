@@ -22,7 +22,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
+          
+      - name: Debug env presence (safe)
+        run: |
+            python - <<'PY'
+            import os
+            print("SUPABASE_URL present:", bool(os.environ.get("SUPABASE_URL")))
+            print("SUPABASE_KEY present:", bool(os.environ.get("SUPABASE_KEY")))
+            # If your script expects a .env file, check for that file:
+            print(".env exists:", os.path.exists(".env"))
+            PY
+            
       - name: Run auto-sync
         env:
           POS_BASE_URL: ${{ secrets.POS_BASE_URL }}
