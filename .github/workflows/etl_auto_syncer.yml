@@ -1,0 +1,33 @@
+# Run pipeline on-demand or nightly; uses secrets to create .env and runs auto_sync
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 2 * * *' # daily at 02:00 UTC (adjust as needed)
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Create .env from secrets
+        run: |
+          cat > .env <<EOF
+          POS_BASE_URL=${{ secrets.POS_BASE_URL }}
+          POS_USERNAME=${{ secrets.POS_USERNAME }}
+          POS_PASSWORD=${{ secrets.POS_PASSWORD }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          EOF
+
+      - name: Run auto-sync (pull from POS then run pipeline)
+        run: python -m pos4africa.auto_sync all
