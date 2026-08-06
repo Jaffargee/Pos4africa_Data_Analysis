@@ -128,14 +128,12 @@ class AutoSync:
 
       async def auto_sync(self) -> None:
             async with PosConnector(None, None) as connector:
-                  while True:
-                        logging.info("Starting auto-sync process...")
-                        await self._sync_once(connector=connector)
-                        logging.info("Auto-sync process completed. Sleeping for 24 hours...")
-                        if self.report == ALL_REPORT_URL:
-                              self.report = TODAY_REPORT_URL
-                              self.ran_all = True
-                        await asyncio.sleep(60)  # Sleep for 1 minute for testing; change to 86400 for 24 hours in production
+                  logging.info("Starting auto-sync process...")
+                  await self._sync_once(connector=connector)
+                  logging.info("Auto-sync process completed. Sleeping for 24 hours...")
+                  if self.report == ALL_REPORT_URL:
+                        self.report = TODAY_REPORT_URL
+                        self.ran_all = True
 
       async def _sync_once(self, connector: PosConnector) -> None:
             excel_path = self.file_system.resolve_excel_path(settings.excel_source_path)
