@@ -14,7 +14,7 @@ class CustomerSyncer(BaseComponent):
             customers = await extractor.run(excel_path=settings.customer_excel_path, sheet_name=settings.customer_sheet_name)
             customers = syncer.sync(customers)
 
-            inserted_customers = await writer.write_customers(customers)
+            inserted_customers = await writer.write_customers(syncer.normalize_customer_data(customers))
             syncer.save_json_object(syncer.customers_local_db_file_path, syncer.get_customers())
 
             ctx.metrics["inserted_customers"] = inserted_customers

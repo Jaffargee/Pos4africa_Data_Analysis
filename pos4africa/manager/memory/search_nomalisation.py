@@ -6,6 +6,6 @@ def search_(name: str, list_: list) -> str | None:
             print('Customer & Customer list must be provided.')
             return None
       
-      best_match = process.extractOne(name, list_, score_cutoff=90)
+      best_match = process.extractOne(name, list_, score_cutoff=None)
 
       return  best_match[0] if best_match else None

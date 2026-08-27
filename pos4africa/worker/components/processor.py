@@ -7,6 +7,8 @@ from pos4africa.worker.components.base import BaseComponent
 from pos4africa.manager.memory.store import MemoryStore
 from pos4africa.shared.models.sale import Sale
 from pos4africa.manager.memory.search_nomalisation import search_
+from pos4africa.worker.components.sync import Sync
+from pos4africa.shared.models.item import Item
 import hashlib, json
 
 class Processor(BaseComponent):
@@ -20,6 +22,12 @@ class Processor(BaseComponent):
                   'ACCESS BANK', 'STANBIC IBTC BANK',
                   'MONIEPOINT MFB', 'CASH PAYMENT'
             ]
+
+            self._items: dict = {}
+
+      async def initialize(self) -> None:
+            o_items = await Sync.fetch_items()
+            self._items = self.to_item_dict(o_items)
 
       async def run(self, parsed_sale: Sale | None) -> ProcessedSale | None:
 
@@ -42,7 +50,7 @@ class Processor(BaseComponent):
       async def _process(self, parsed_sale: Sale) -> ProcessedSale:
 
             # ── Resolve customer ────────────────────────────────────────────────
-            customer_id = await self._resolve_customer_id(parsed_sale.customer_name)
+            customer_id = parsed_sale.pos_customer_id
 
             if not customer_id:
                   self.log.warning(
@@ -57,6 +65,18 @@ class Processor(BaseComponent):
 
             for item in parsed_sale.items or []:
                   try:
+
+                        if item.pos_item_id == 194:
+                              continue
+                        
+                        if item.pos_item_id == 83:
+                              item.pos_item_id = 160
+                        
+                        s_item = self._items.get(str(item.pos_item_id), None)
+                        
+                        if not s_item:
+                              raise Exception(f"processor.item_parse_failed - [Can't get Item cost, Initialize the processor, pos_item_id = {item.pos_item_id}]")
+                        
                         items.append(
                               ProcessedSaleItem(
                                     pos_sale_id = parsed_sale.pos_sale_id,
@@ -64,7 +84,8 @@ class Processor(BaseComponent):
                                     name        = item.name,
                                     quantity    = item.quantity,
                                     unit_price  = item.unit_price,
-                                    total       = item.total
+                                    total       = item.total,
+                                    cost_price  = s_item.cost_price
                               )
                         )
                   except Exception as e:
@@ -134,3 +155,8 @@ class Processor(BaseComponent):
 
       def generate_hash(self, data: str) -> str:
             return hashlib.sha256(data.encode('utf-8')).hexdigest()
+
+      def to_item_dict(self, items: list[Item]) -> dict[str, Item]:
+            it = {str(item.pos_item_id): item for item in items}
+            print(it['117'])
+            return it

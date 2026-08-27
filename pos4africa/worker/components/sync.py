@@ -2,6 +2,7 @@ from pos4africa.infra.supabase_client import spb_client
 from pos4africa.config import settings
 from pos4africa.shared.models.customer import Customer
 from pos4africa.shared.models.account import Account
+from pos4africa.shared.models.item import Item
 import socket, time
 
 class Sync:
@@ -42,6 +43,15 @@ class Sync:
             customers = await Sync._select_all()
             
             return [Customer(**row) for row in customers if row.get("first_name")]
+
+      @staticmethod
+      async def fetch_items() -> list[Item] | None:
+            if not settings.supabase_table_items:
+                  raise ValueError('supabase_table_items is not configured.')
+
+            items = await Sync._select_all(table=settings.supabase_table_items, columns="id, pos_item_id, cost_price, selling_price, item_name, quantity, is_barcoded, created_at")
+
+            return [Item(**item) for item in items if item.get("pos_item_id")]
       
       @staticmethod
       async def fetch_accounts() -> list[Account]:
@@ -49,5 +59,4 @@ class Sync:
                   raise ValueError('supabase_table_accounts is not configured.')
 
             accounts = await Sync._select_all(table=settings.supabase_table_accounts, columns="id, bank_name") 
-            
             return [Account(**acct) for acct in accounts if acct.get("id")]

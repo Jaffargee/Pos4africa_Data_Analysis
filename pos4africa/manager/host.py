@@ -32,8 +32,6 @@ class HostManager:
       async def run(self) -> dict[str, int]:
             log.info("host_manager.starting", mode="excel_single_node", node_id=self._node_id)
 
-            config = []
-
             await self._node.start()
             try:
                   summary = await self._node.run_once()

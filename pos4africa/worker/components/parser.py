@@ -40,6 +40,7 @@ class Parser(BaseComponent):
 
             return Sale(
                   pos_sale_id=self._parse_int(self._require(raw.pos_sale_id, "pos_sale_id"), "pos_sale_id"),
+                  pos_customer_id=self._parse_int(raw.pos_customer_id, "pos_customer_id") if raw.pos_customer_id else 23,
                   invoice_datetime=self._parse_datetime(raw.invoice_datetime),
                   salesperson=self._clean_str(self._require(raw.salesperson, "salesperson")),
                   customer_name=customer_name,

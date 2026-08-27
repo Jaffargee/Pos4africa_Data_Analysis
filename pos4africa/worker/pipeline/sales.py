@@ -20,6 +20,7 @@ class SalesSyncer(BaseComponent):
             sale_extractor = SaleExtractor(ctx.node_id, ctx.memory)
             parser = Parser(ctx.node_id, ctx.memory)
             processor = Processor(ctx.node_id, ctx.memory)
+            await processor.initialize()
 
             self.log.bind(node_id=ctx.node_id)
 
@@ -50,7 +51,13 @@ class SalesSyncer(BaseComponent):
                               failed += 1
                               continue
 
+                        _83exists = [_83 for _83 in processed_sale.items if _83.pos_item_id == 83]
+                        if _83exists:
+                              for i in _83exists:
+                                    i.pos_item_id = 160
+
                         processed_sales.append(processed_sale.to_db_dict())
+                        
                   except Exception as exc:
                         failed += 1
                         self.log.error(
@@ -60,8 +67,8 @@ class SalesSyncer(BaseComponent):
                         )
 
             sales_to_process = await self.reconcile_and_filter(processed_sales)
-            inserted = await writer.write(sales_to_process)
-            # inserted = await writer.write(processed_sales)
+            # inserted = await writer.write(sales_to_process)
+            inserted = await writer.write(processed_sales)
 
             ctx.metrics["inserted"] = inserted
 

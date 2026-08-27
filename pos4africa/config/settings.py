@@ -41,6 +41,7 @@ class Settings(BaseSettings):
       supabase_table_sales: str = "sales"
       supabase_table_customers: str = "customers"
       supabase_table_accounts: str = "accounts"
+      supabase_table_items: str  = "items"
 
       # ── Circuit breaker ───────────────────────────────────────────────────────
       cb_failure_threshold: int = 5             # failures before OPEN

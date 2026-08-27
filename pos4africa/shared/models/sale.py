@@ -112,6 +112,9 @@ class ProcessedSaleItem(BaseModel):
       unit_price: Decimal
       total: Decimal
 
+      # Critical for discrepencies
+      cost_price: Decimal
+
 class ProcessedSale(BaseModel):
       """Output of Processor. Matches the Supabase `sales` table schema exactly."""
       id: UUID | None = None

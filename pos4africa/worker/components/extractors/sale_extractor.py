@@ -85,6 +85,7 @@ class SaleExtractor(BaseComponent, Extractor):
     
             return RawSale(
                   pos_sale_id=str(int(header["sale_id"])),
+                  pos_customer_id=self._stringify_number(header["pos_customer_id"]),
                   invoice_datetime=self._stringify(header.get("invoice_datetime")),
                   salesperson=self._clean_string(header.get("salesperson")),
                   customer_name=customer_name,
