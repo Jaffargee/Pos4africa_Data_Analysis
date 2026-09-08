@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @font-face { font-family: "DejaVu Sans"; src: url("{{ font_regular }}"); }
+    @font-face { font-family: "DejaVu Sans"; font-weight: bold; src: url("{{ font_bold }}"); }
+    @page { size: A4; margin: 2cm; }
+    body { font-family: "DejaVu Sans", Helvetica, Arial, sans-serif; color: #1a1a1a; font-size: 11px; }
+    h1 { font-size: 20px; margin-bottom: 0; color: #2b2b2b; }
+    .subtitle { color: #777; font-size: 11px; margin-top: 2px; }
+    .meta { margin: 14px 0 20px 0; font-size: 11px; color: #444; }
+    .meta strong { color: #111; }
+    .stats { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .stats td { width: 25%; padding: 10px; background: #f6f6f6; border: 1px solid #e2e2e2; text-align: center; }
+    .stats .value { font-size: 16px; font-weight: bold; color: #8a5a00; display: block; }
+    .stats .label { font-size: 9px; color: #777; text-transform: uppercase; }
+    h2 { font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 22px; color: #2b2b2b; }
+    table.data { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    table.data th { background: #2b2b2b; color: #fff; text-align: left; padding: 6px 8px; font-size: 10px; }
+    table.data td { padding: 5px 8px; border-bottom: 1px solid #eee; font-size: 10px; }
+    table.data tr:nth-child(even) { background: #fafafa; }
+    .right { text-align: right; }
+    .footer { margin-top: 30px; font-size: 9px; color: #999; text-align: center; }
+</style>
+</head>
+<body>
+
+    <h1>{{ company_name }}</h1>
+    <div class="subtitle">Customer Sales Report</div>
+
+    <div class="meta">
+        <strong>Customer:</strong> {{ customer.customer_name }}<br>
+        {% if customer.phone %}<strong>Phone:</strong> {{ customer.phone }}<br>{% endif %}
+        {% if customer.email %}<strong>Email:</strong> {{ customer.email }}<br>{% endif %}
+        <strong>Report period:</strong> {{ period_label }}<br>
+        <strong>Generated:</strong> {{ generated_at }}
+    </div>
+
+    <table class="stats">
+        <tr>
+            <td><span class="value">{{ currency }}{{ "{:,.2f}".format(analytics.total_revenue) }}</span><span class="label">Total Revenue</span></td>
+            <td><span class="value">{{ analytics.order_count }}</span><span class="label">Orders</span></td>
+            <td><span class="value">{{ currency }}{{ "{:,.2f}".format(analytics.avg_order_value) }}</span><span class="label">Avg Order Value</span></td>
+            <td><span class="value">{{ analytics.top_products|length }}</span><span class="label">Products Purchased</span></td>
+        </tr>
+    </table>
+
+    {% if analytics.top_products %}
+    <h2>Top Products</h2>
+    <table class="data">
+        <tr><th>Product</th><th class="right">Qty</th><th class="right">Revenue</th></tr>
+        {% for p in analytics.top_products %}
+        <tr>
+            <td>{{ p.product }}</td>
+            <td class="right">{{ "{:,.0f}".format(p.qty) }}</td>
+            <td class="right">{{ currency }}{{ "{:,.2f}".format(p.revenue) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if analytics.monthly_breakdown %}
+    <h2>Monthly Trend</h2>
+    <table class="data">
+        <tr><th>Month</th><th class="right">Revenue</th></tr>
+        {% for m in analytics.monthly_breakdown %}
+        <tr><td>{{ m.month }}</td><td class="right">{{ currency }}{{ "{:,.2f}".format(m.total) }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if analytics.payment_breakdown %}
+    <h2>Payment Methods</h2>
+    <table class="data">
+        <tr><th>Method</th><th class="right">Total</th></tr>
+        {% for pm in analytics.payment_breakdown %}
+        <tr><td>{{ pm.method }}</td><td class="right">{{ currency }}{{ "{:,.2f}".format(pm.total) }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <h2>Order History</h2>
+    <table class="data">
+        <tr>
+            <th>Date</th>
+            <th>Invoice</th>
+            <th class="right">Items Bought</th>
+            <th class="right">Items Returned</th>
+            <th class="right">Total</th>
+        </tr>
+        {% for o in analytics.orders %}
+        <tr>
+            <td>{{ o.date }}</td>
+            <td>{{ o.sale_id }}</td>
+            <td class="right">{{ o.items_sold }}</td>
+            <td class="right">{{ o.items_returned }}</td>
+            <td class="right">{{ currency }}{{ "{:,.2f}".format(o.total) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="footer">Generated automatically by the sales report tool &mdash; {{ generated_at }}</div>
+
+</body>
+</html>

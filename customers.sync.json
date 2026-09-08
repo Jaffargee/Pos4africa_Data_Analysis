@@ -1912,5 +1912,35 @@
         "first_name": "HAJ MAIMUNA ZANGO",
         "last_name": null,
         "hash": "8da026f469c86f58b7182273f6071b30b487e9bbe46cd6a364683f4e3453606c"
+    },
+    "337": {
+        "pos_customer_id": 337,
+        "first_name": "ZAINAB CAMEROON",
+        "last_name": null,
+        "hash": "704556e1d66d7267b1f8127b4e8a642a0875f0329359b80c14249bc28be326fc"
+    },
+    "338": {
+        "pos_customer_id": 338,
+        "first_name": "UMMI AISHA",
+        "last_name": null,
+        "hash": "51d259bcdd7dd7dcef7720825fc55ee02da15388217b1e9749bdc6ffc4c40ec7"
+    },
+    "339": {
+        "pos_customer_id": 339,
+        "first_name": "RAHAMA S FULANI",
+        "last_name": null,
+        "hash": "9b5ca7da761ed847699855dfcb6467b4f3a15834490184392a1939e55f7a0356"
+    },
+    "340": {
+        "pos_customer_id": 340,
+        "first_name": "MAMAN NABILA",
+        "last_name": null,
+        "hash": "bc952569f94f96dc22905782d0a5c2e0fe9dc2aea9a6fff146f83294d1bee61f"
+    },
+    "341": {
+        "pos_customer_id": 341,
+        "first_name": "UMMI KATSINA",
+        "last_name": null,
+        "hash": "0f5d46c36009f7ad425e4cb42d625cf8f2936b760637ee137dd79aa94c89acaa"
     }
 }
