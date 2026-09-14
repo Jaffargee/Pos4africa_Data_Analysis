@@ -61,7 +61,7 @@ class Parser(BaseComponent):
                   pos_sale_id=self._parse_int(raw.pos_sale_id, "rawsale.pos_sale_id"),
                   name=self._clean_str(raw.name),
                   unit_price=self._parse_decimal(raw.unit_price, "unit_price"),
-                  quantity=self._parse_int(raw.quantity, "quantity"),
+                  quantity=self._parse_float(raw.quantity, "quantity"),
                   total=self._parse_decimal(raw.total, "total"),
             )
 
@@ -110,6 +110,16 @@ class Parser(BaseComponent):
             except (ValueError, AttributeError) as exc:
                   raise ValueError(f"Cannot parse '{value}' as int for '{field}'") from exc
 
+      def _parse_float(self, value: str | None, field: str, default: float | None = None) -> float:
+            if not value:
+                  if default is not None:
+                        return default
+                  raise ValueError(f"Missing float field '{field}'")
+            try:
+                  return float(value.strip())
+            except (ValueError, AttributeError) as exc:
+                  raise ValueError(f"Cannot parse '{value}' as int for '{field}'") from exc
+            
       def _parse_datetime(self, value: str | None) -> datetime:
             if not value:
                   raise ValueError("Missing invoice_datetime")

@@ -158,5 +158,4 @@ class Processor(BaseComponent):
 
       def to_item_dict(self, items: list[Item]) -> dict[str, Item]:
             it = {str(item.pos_item_id): item for item in items}
-            print(it['117'])
             return it

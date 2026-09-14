@@ -56,7 +56,7 @@ class SaleItem(BaseModel):
       pos_item_id: int | None = None
       pos_sale_id: int | None = None
       name: str | None
-      quantity: int | None = None
+      quantity: float | None = None
       unit_price: Decimal
       total: Decimal
 
@@ -81,9 +81,9 @@ class Sale(BaseModel):
       # Numbers
       invoice_total: Decimal
       change_due: Decimal
-      items_net: int
-      items_sold: int
-      items_returned: int
+      items_net: float
+      items_sold: float
+      items_returned: float
 
       # Arrays
       items: list[SaleItem] = []
@@ -108,7 +108,7 @@ class ProcessedSaleItem(BaseModel):
       pos_item_id: int | None = None
       pos_sale_id: int | None = None
       name: str | None
-      quantity: int | None = None
+      quantity: float | None = None
       unit_price: Decimal
       total: Decimal
 
@@ -135,9 +135,9 @@ class ProcessedSale(BaseModel):
       # Numbers
       invoice_total: Decimal
       change_due: Decimal
-      items_net: int
-      items_sold: int
-      items_returned: int
+      items_net: float
+      items_sold: float
+      items_returned: float
       
       # Arrays
       items: list[ProcessedSaleItem] = []
