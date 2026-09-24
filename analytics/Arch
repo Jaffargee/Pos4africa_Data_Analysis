@@ -1,0 +1,19 @@
+                  ┌─────────────────────────┐
+                  │       SUPABASE          │
+                  │    SOURCE OF TRUTH      │
+                  └────────────┬────────────┘
+                              │
+                        Python Sync Layer
+                              │
+                  ┌────────────▼────────────┐
+                  │        Redis            │
+                  │      LOCAL CACHE        │
+                  └────────────┬────────────┘
+                              │
+                  SQL queries / joins
+                              │
+            ┌──────────────────▼─────────────────┐
+            │       Analytics / Data Layer       │
+            │ pandas → NumPy → sklearn → models  │
+            └────────────────────────────────────┘
+

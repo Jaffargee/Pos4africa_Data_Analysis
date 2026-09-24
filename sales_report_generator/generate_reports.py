@@ -108,7 +108,7 @@ def main():
                 customer[config.CUSTOMER_ID_COL], args.date_from, args.date_to
             )
             analytics = build_analytics(sales)
-            path = render_customer_pdf(customer, analytics, label, args.output_dir)
+            path = render_customer_pdf(customer, sales, analytics, label, args.output_dir)
             print(f"  [OK] {name} -> {path}")
             ok += 1
         except Exception as exc:

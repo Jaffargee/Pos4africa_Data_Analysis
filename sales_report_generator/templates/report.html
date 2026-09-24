@@ -46,7 +46,7 @@
         </tr>
     </table>
 
-    {% if analytics.top_products %}
+    <!-- {% if analytics.top_products %}
     <h2>Top Products</h2>
     <table class="data">
         <tr><th>Product</th><th class="right">Qty</th><th class="right">Revenue</th></tr>
@@ -58,9 +58,9 @@
         </tr>
         {% endfor %}
     </table>
-    {% endif %}
+    {% endif %} -->
 
-    {% if analytics.monthly_breakdown %}
+    <!-- {% if analytics.monthly_breakdown %}
     <h2>Monthly Trend</h2>
     <table class="data">
         <tr><th>Month</th><th class="right">Revenue</th></tr>
@@ -68,9 +68,9 @@
         <tr><td>{{ m.month }}</td><td class="right">{{ currency }}{{ "{:,.2f}".format(m.total) }}</td></tr>
         {% endfor %}
     </table>
-    {% endif %}
+    {% endif %} -->
 
-    {% if analytics.payment_breakdown %}
+    <!-- {% if analytics.payment_breakdown %}
     <h2>Payment Methods</h2>
     <table class="data">
         <tr><th>Method</th><th class="right">Total</th></tr>
@@ -78,7 +78,7 @@
         <tr><td>{{ pm.method }}</td><td class="right">{{ currency }}{{ "{:,.2f}".format(pm.total) }}</td></tr>
         {% endfor %}
     </table>
-    {% endif %}
+    {% endif %} -->
 
     <h2>Order History</h2>
     <table class="data">
@@ -97,6 +97,30 @@
             <td class="right">{{ o.items_returned }}</td>
             <td class="right">{{ currency }}{{ "{:,.2f}".format(o.total) }}</td>
         </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Full Transaction History</h2>
+    <table class="data">
+        <tr>
+            <th>Date</th>
+            <th>Invoice</th>
+            <th>Item Name</th>
+            <th class="right">Quantity</th>
+            <th class="right">Unit Price</th>
+            <th class="right">Total</th>
+        </tr>
+        {% for s in sales %}
+            {% for si in s._items %}
+            <tr>
+                <td>{{ s.invoice_datetime }}</td>
+                <td>{{ s.pos_sale_id }}</td>
+                <td>{{ si.name }}</td>
+                <td class="right">{{ si.quantity }}</td>
+                <td class="right">{{ currency }}{{ "{:,.2f}".format(si.unit_price) }}</td>
+                <td class="right">{{ currency }}{{ "{:,.2f}".format(si.total) }}</td>
+            </tr>
+            {% endfor %}
         {% endfor %}
     </table>
 

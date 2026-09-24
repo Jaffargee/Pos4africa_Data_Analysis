@@ -1948,5 +1948,89 @@
         "first_name": "FARIDA MUHD",
         "last_name": null,
         "hash": "fdbbc3c266ab889492fdfcaf3bde7c8e7f29caf004468f9c5b38df805afb459a"
+    },
+    "343": {
+        "pos_customer_id": 343,
+        "first_name": "ANTY AISHA MAIDUGURI",
+        "last_name": null,
+        "hash": "714ccd94da8974cb47089356674afc12b99efe33078ad8e13111ab7c5e34bd44"
+    },
+    "344": {
+        "pos_customer_id": 344,
+        "first_name": "AMINA LADAN",
+        "last_name": null,
+        "hash": "4dd42c21618ff3992ffcc97543160298f5c5b7e010a0e92368b6a888691a89bd"
+    },
+    "345": {
+        "pos_customer_id": 345,
+        "first_name": "BILKISU YUSHA'U",
+        "last_name": null,
+        "hash": "1739034af1ee99dc8a42bbbc77f89eff1491879c393d6f77ebbb76cdc51094db"
+    },
+    "346": {
+        "pos_customer_id": 346,
+        "first_name": "KHADIJA DJAS",
+        "last_name": null,
+        "hash": "bae75d42b4303b9c6659257d8732b162bb2e3e69643ccfbfcdd3f0b98bac7aff"
+    },
+    "347": {
+        "pos_customer_id": 347,
+        "first_name": "HAJ SAFIYA ",
+        "last_name": "HAYATU",
+        "hash": "dcea18c9e6dbbdebd9e43093449e3703ee8ff3527a75fbf29f8204b4c6d11ca7"
+    },
+    "348": {
+        "pos_customer_id": 348,
+        "first_name": "HAJ HAUWA",
+        "last_name": "ZAYYANA",
+        "hash": "36ca07e54c1c9be49ca2d91e9c2b590792756c0ac61a1f8c16d4d6a37867a783"
+    },
+    "349": {
+        "pos_customer_id": 349,
+        "first_name": "HAJ FATIMA MAIDUGURI",
+        "last_name": null,
+        "hash": "763e0cca3fb0db0e476be34eb0725352a6a43ba9bcbfc1130c5bb0c7ad53199e"
+    },
+    "351": {
+        "pos_customer_id": 351,
+        "first_name": "HAJ FASUMA",
+        "last_name": null,
+        "hash": "d4a51f3dd5111b8df36961ae6278a4a859b4e433c9a481cd5fe57816bab3cefc"
+    },
+    "352": {
+        "pos_customer_id": 352,
+        "first_name": "M KHADIJA",
+        "last_name": "LABARAN",
+        "hash": "b711c590aa56552d6939aa4a0957d2c852b804cdf30d0e740e46bcfe34ae3c13"
+    },
+    "353": {
+        "pos_customer_id": 353,
+        "first_name": "HANNATU",
+        "last_name": null,
+        "hash": "e13630f05f30971b2332892f268352ce8afeb8be240dbfd26e1ba7bc3f9bc477"
+    },
+    "354": {
+        "pos_customer_id": 354,
+        "first_name": "UMMI BABA SHANE",
+        "last_name": null,
+        "hash": "21f2b592c20842fad7b75cf894e1e82419ec0be023ec37c4b21f12f9171452e1"
+    },
+    "355": {
+        "pos_customer_id": 355,
+        "first_name": "ESHA",
+        "last_name": "ALPHA",
+        "hash": "a8ebe545d3aa1eb8731265a8b15a2df4529f9307e34b38735812cc30a797add2"
+    },
+    "356": {
+        "pos_customer_id": 356,
+        "first_name": "RABI'ATU",
+        "last_name": "SULAIMAN",
+        "hash": "02b7e85e639a407cbacc869cd1b368aaebd3b15facd13d39d9fb0e564b72a6ec"
+    },
+    "357": {
+        "pos_customer_id": 357,
+        "first_name": "AISHA",
+        "last_name": "HAFIZ",
+        "hash": "5b58e788e6ddf47eb67b5b29c592cd3ccabd5316bdf2186f7c0ca411de40905f"
     }
 }

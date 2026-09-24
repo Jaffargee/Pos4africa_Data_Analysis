@@ -1,7 +1,7 @@
 # src/features.py
 import numpy as np
 import pandas as pd
-from config import Config
+from src.config import Config
 
 def prepare_daily_features(df_daily: pd.DataFrame) -> pd.DataFrame:
       """Prepares daily aggregated data for clustering."""

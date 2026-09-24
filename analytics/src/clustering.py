@@ -2,7 +2,7 @@
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from config import Config
+from src.config import Config
 
 class POSClusterer:
       def __init__(self, n_clusters: int = Config.N_CLUSTERS, features: list[str] = Config.CLUSTERING_FEATURES):

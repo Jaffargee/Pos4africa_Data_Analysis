@@ -9,7 +9,7 @@ round trips, but it works against any schema without extra setup.
 """
 from functools import lru_cache
 from supabase import create_client, Client
-
+from datetime import datetime
 import config
 
 
@@ -109,6 +109,14 @@ def fetch_products(product_ids):
         for row in (resp.data or [])
     }
 
+def _parse_date(value):
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
 
 def get_customer_sales_bundle(customer_id, date_from=None, date_to=None):
     """
@@ -130,6 +138,7 @@ def get_customer_sales_bundle(customer_id, date_from=None, date_to=None):
         items_by_sale.setdefault(item[config.SALE_ITEM_SALE_FK], []).append(item)
 
     for sale in sales:
+        sale["invoice_datetime"] = str(_parse_date(sale["invoice_datetime"])).split("T")[0]
         sale["_items"] = items_by_sale.get(sale[config.SALE_ID_COL], [])
 
     return sales

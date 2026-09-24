@@ -30,6 +30,7 @@ def build_analytics(sales: list) -> dict:
             "monthly_breakdown": [],
             "payment_breakdown": [],
             "orders": [],
+            "items": []
         }
 
     sales_df = pd.DataFrame(sales)

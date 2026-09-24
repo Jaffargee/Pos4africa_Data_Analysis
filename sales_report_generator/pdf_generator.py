@@ -20,7 +20,7 @@ def _slugify(name: str) -> str:
     return slug or "customer"
 
 
-def render_customer_pdf(customer: dict, analytics: dict, period_label: str, output_dir: str) -> str:
+def render_customer_pdf(customer: dict, sales: list[dict], analytics: dict, period_label: str, output_dir: str) -> str:
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     template = env.get_template("report.html")
 
@@ -34,6 +34,7 @@ def render_customer_pdf(customer: dict, analytics: dict, period_label: str, outp
         company_name=config.COMPANY_NAME,
         currency=config.CURRENCY_SYMBOL,
         customer=customer,
+        sales=sales,
         analytics=analytics,
         period_label=period_label,
         generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
