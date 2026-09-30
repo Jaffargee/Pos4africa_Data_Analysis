@@ -3,7 +3,7 @@ name: Auto Sync Pipeline
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '*/5 * * * *'   # every minute
+    - cron: '0 0 * * *'   # every 24 hours
 
 jobs:
   run-pipeline:
