@@ -134,7 +134,6 @@ class Processor(BaseComponent):
                   items_returned   = parsed_sale.items_returned,
                   change_due       = parsed_sale.change_due,
                   comment          = parsed_sale.comment,
-                  is_anonymous_customer = parsed_sale.is_anonymous_customer,
                   items            = items,
                   payments         = payments,
                   hash             = sale_hash

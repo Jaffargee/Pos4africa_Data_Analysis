@@ -12,9 +12,9 @@ import json
 
 async def main():
 
-      async with PosConnector(None, None) as connector:
-            d_manager = DownloadManager()
-            await d_manager.download_excel(connector, ALL_REPORT_URL, Path(settings.excel_source_path).resolve())
+      # async with PosConnector(None, None) as connector:
+      #       d_manager = DownloadManager()
+      #       await d_manager.download_excel(connector, ALL_REPORT_URL, Path(settings.excel_source_path).resolve())
 
 
       # excel_path = Path(settings.catalog_excel_path).resolve()

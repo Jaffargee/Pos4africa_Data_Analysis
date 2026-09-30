@@ -44,7 +44,6 @@ class Parser(BaseComponent):
                   invoice_datetime=self._parse_datetime(raw.invoice_datetime),
                   salesperson=self._clean_str(self._require(raw.salesperson, "salesperson")),
                   customer_name=customer_name,
-                  is_anonymous_customer=raw.is_anonymous_customer,
                   invoice_total=self._parse_decimal(raw.invoice_total, "invoice_total"),
                   change_due=self._parse_decimal(raw.change_due, "change_due", default=Decimal("0.00")),
                   items_sold=items_sold,

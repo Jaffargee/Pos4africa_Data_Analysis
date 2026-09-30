@@ -49,7 +49,7 @@ class Sync:
             if not settings.supabase_table_items:
                   raise ValueError('supabase_table_items is not configured.')
 
-            items = await Sync._select_all(table=settings.supabase_table_items, columns="id, pos_item_id, cost_price, selling_price, item_name, quantity, is_barcoded, created_at")
+            items = await Sync._select_all(table=settings.supabase_table_items, columns="id, pos_item_id, cost_price, selling_price, item_name, quantity, created_at")
 
             return [Item(**item) for item in items if item.get("pos_item_id")]
       

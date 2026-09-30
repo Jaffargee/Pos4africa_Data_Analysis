@@ -66,7 +66,8 @@ class SalesSyncer(BaseComponent):
                               error=str(exc),
                         )
 
-            sales_to_process = await self.reconcile_and_filter(processed_sales)
+            # sales_to_process = await self.reconcile_and_filter(processed_sales)
+   
             # inserted = await writer.write(sales_to_process)
             inserted = await writer.write(processed_sales)
 

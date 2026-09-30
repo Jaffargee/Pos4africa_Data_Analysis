@@ -42,7 +42,6 @@ class RawSale(BaseModel):
       invoice_datetime:        str | None = None
       salesperson:             str | None = None
       customer_name:           str | None = None
-      is_anonymous_customer:   bool       = False
       invoice_total:           str | None = None
       items_sold:              str | None = None
       items_returned:          str | None = None
@@ -76,7 +75,6 @@ class Sale(BaseModel):
       salesperson: str
       customer_name: str
       comment: str | None = None
-      is_anonymous_customer: bool = False
       
       # Numbers
       invoice_total: Decimal
@@ -130,7 +128,6 @@ class ProcessedSale(BaseModel):
       salesperson: str
       customer_name: str
       comment: str | None = None
-      is_anonymous_customer: bool = False
 
       # Numbers
       invoice_total: Decimal
@@ -155,7 +152,6 @@ class ProcessedSale(BaseModel):
                   "salesperson": self.salesperson,
                   "invoice_datetime": self.invoice_datetime.isoformat(),
                   "comment": self.comment,
-                  "is_anonymous_customer": self.is_anonymous_customer,
                   "items_net": self.items_net,
                   "items_sold": self.items_sold,
                   "items_returned": self.items_returned,

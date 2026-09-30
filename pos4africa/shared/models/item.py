@@ -15,7 +15,5 @@ class Item(BaseModel):
       selling_price: Decimal
 
       quantity: float
-
-      is_barcoded: bool
       
       created_at: datetime | None = None

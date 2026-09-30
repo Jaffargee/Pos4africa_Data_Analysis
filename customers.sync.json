@@ -2032,5 +2032,89 @@
         "first_name": "AISHA",
         "last_name": "HAFIZ",
         "hash": "5b58e788e6ddf47eb67b5b29c592cd3ccabd5316bdf2186f7c0ca411de40905f"
+    },
+    "358": {
+        "pos_customer_id": 358,
+        "first_name": "MAMAN IKILIMA",
+        "last_name": null,
+        "hash": "e350f0e8932871334a10c772a53f63414101df013f3a838a059907595b322ae7"
+    },
+    "359": {
+        "pos_customer_id": 359,
+        "first_name": "FATIMA GWALABE",
+        "last_name": null,
+        "hash": "7cce0d9b82bb76713d2fbba1c60abb6249c425eb8c49fc31cc85e9a87731341e"
+    },
+    "360": {
+        "pos_customer_id": 360,
+        "first_name": "HALIMA",
+        "last_name": "KOLLERE",
+        "hash": "31ebcb46802df55fdcd5fac228a69a730757229a623c536381795e9fedd61082"
+    },
+    "361": {
+        "pos_customer_id": 361,
+        "first_name": "SAFIYA",
+        "last_name": "GIMBA",
+        "hash": "3dd7c1cca8afe5a32b82f58a1dd94c775629ae6d6eb4129bd1b0b21722d6fa55"
+    },
+    "362": {
+        "pos_customer_id": 362,
+        "first_name": "HAJ AISHA",
+        "last_name": "YAHAYA",
+        "hash": "9a8ba2b49378892cf10a20ac902e84506af688db86cd6e57d592773f51a82438"
+    },
+    "363": {
+        "pos_customer_id": 363,
+        "first_name": "MMN",
+        "last_name": "ASHEFAT",
+        "hash": "8e5258792f0cc42f13997ae9530db860fa5fb1515fd8cedb744046bee27cd169"
+    },
+    "364": {
+        "pos_customer_id": 364,
+        "first_name": "HAJ BADIYA",
+        "last_name": "ANAS",
+        "hash": "cbcffe269842719ce2f42eb1bf174467707705d69fb3a2f3765a42b2e4ea0260"
+    },
+    "365": {
+        "pos_customer_id": 365,
+        "first_name": "HAJ HAFSAT ",
+        "last_name": "KATSINA",
+        "hash": "03ba607b09b03b672d6a1d710435c31ec5fbf5f7cfacfacc470dd1ad21426418"
+    },
+    "366": {
+        "pos_customer_id": 366,
+        "first_name": "UMMI",
+        "last_name": "MANDE",
+        "hash": "245857d7087d76b020407624f32d2c518765339f6bba3ac9ee7aed4b186ffccf"
+    },
+    "367": {
+        "pos_customer_id": 367,
+        "first_name": "GRACE GARA",
+        "last_name": null,
+        "hash": "080a8ab07c75670313c12305139dd77c65be291ce66a0ed2a7c165c0fd7f8335"
+    },
+    "368": {
+        "pos_customer_id": 368,
+        "first_name": "HAJ MAIMUNA",
+        "last_name": "AGAJI",
+        "hash": "6cac460d663623b3542060a7c491412ee9ecb2c97516569e7f724154530a693e"
+    },
+    "369": {
+        "pos_customer_id": 369,
+        "first_name": "RUKAYYA WADA",
+        "last_name": null,
+        "hash": "2ac9e01cdc7868662a773cf2f3d53aacf085214d5b490abebe209c4bfaf7640a"
+    },
+    "370": {
+        "pos_customer_id": 370,
+        "first_name": "ZAINAB",
+        "last_name": "ZMY",
+        "hash": "35becc8af52b8ee78dbce1f796d133fb5cc7e554e0ad617b38cd50f5bea5ea53"
+    },
+    "371": {
+        "pos_customer_id": 371,
+        "first_name": "JAMILA KADUNA",
+        "last_name": null,
+        "hash": "b4bb2402916b13d63f3ad74af6ef5873fc731dd45d840c4001af4d8fbc3a2d65"
     }
 }

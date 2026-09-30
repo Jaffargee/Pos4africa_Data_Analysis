@@ -159,7 +159,7 @@ class BatchWriter:
                   "salesperson": record.get("salesperson"),
                   "invoice_datetime": record["invoice_datetime"],
                   "comment": record.get("comment"),
-                  "is_anonymous_customer": record.get("is_anonymous_customer", False),
+
                   "items_net": record.get("items_net", 0),
                   "items_sold": record.get("items_sold", 0),
                   "items_returned": record.get("items_returned", 0),

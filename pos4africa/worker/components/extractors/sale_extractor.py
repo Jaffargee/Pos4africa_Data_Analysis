@@ -89,7 +89,6 @@ class SaleExtractor(BaseComponent, Extractor):
                   invoice_datetime=self._stringify(header.get("invoice_datetime")),
                   salesperson=self._clean_string(header.get("salesperson")),
                   customer_name=customer_name,
-                  is_anonymous_customer=self._is_anonymous_customer(customer_name),
                   invoice_total=self._stringify_number(header.get("invoice_total")),
                   items_sold=self._stringify_number(items_sold),
                   items_returned=self._stringify_number(items_returned),
@@ -132,11 +131,6 @@ class SaleExtractor(BaseComponent, Extractor):
                         return payment.amount.lstrip("-")
             return "0"
 
-      def _is_anonymous_customer(self, customer_name: str | None) -> bool:
-            if not customer_name:
-                  return False
-            lowered = customer_name.lower()
-            return any(keyword in lowered for keyword in self._ANONYMOUS_ACCOUNTS)
 
       def _parse_sale_id(self, value: Any) -> int | None:
             if pd.isna(value):

@@ -45,12 +45,6 @@ class CatalogExtractor(BaseComponent, Extractor):
             cost_price = row.get("cost_price")
             selling_price = row.get("selling_price")
             quantity = row.get("quantity")
-            is_barcoded = row.get("is_barcoded")
-
-            if pd.isna(is_barcoded):
-                  is_barcoded = False
-            else:
-                  is_barcoded = bool(is_barcoded)
 
             quantity = float(quantity) if not pd.isna(quantity) else 0
             item_id = int(item_id)
@@ -62,7 +56,6 @@ class CatalogExtractor(BaseComponent, Extractor):
                   cost_price=cost_price,
                   selling_price=selling_price,
                   quantity=quantity,
-                  is_barcoded=True,
             )
 
       def _column_map(self):
@@ -73,5 +66,4 @@ class CatalogExtractor(BaseComponent, Extractor):
                   "cost_price": "cost_price",
                   "selling_price": "selling_price",
                   "quantity": "quantity",
-                  "is_barcoded": "is_barcoded"
             }
