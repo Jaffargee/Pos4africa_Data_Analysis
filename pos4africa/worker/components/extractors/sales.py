@@ -1,0 +1,158 @@
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+from pos4africa.shared.models.sale import RawPayment, RawSale, RawSaleItem
+from pos4africa.worker.components.base import BaseComponent
+from pos4africa.worker.components.extractors.extractor import Extractor
+
+
+class SaleExtractor(BaseComponent, Extractor):
+      """
+      Excel-backed alternative to the HTML Scraper.
+
+      Reads the DSR-style workbook, groups item rows by sale ID, and emits the
+      same RawSale family of models expected by the parser and processor.
+      """
+
+      _ANONYMOUS_ACCOUNTS = ("indoor", "online", "online customers")
+      _PAYMENT_PATTERN = re.compile(
+            r"([A-Za-z ]+):\s*([+-]?\s*[-]?\s*(?:N|₦)?[\d,]+(?:\.\d{1,2})?)",
+            flags=re.IGNORECASE,
+      )
+
+      async def run(self, excel_path: str | Path, sale_id: int | None = None, sheet_name: str | int = 0) -> list[RawSale] | RawSale | None:
+            sales = self._extract(excel_path=excel_path, sheet_name=sheet_name)
+
+            if sale_id is None:
+                  return sales
+
+            for sale in sales:
+                  if sale.pos_sale_id and int(sale.pos_sale_id) == int(sale_id):
+                        return sale
+
+            return None
+
+      def _extract(self, excel_path: str | Path, sheet_name: str | int = 0) -> list[RawSale]:
+            df = pd.read_excel(excel_path, sheet_name=sheet_name)
+            df = self._normalise_dataframe(df)
+
+
+            if df.empty:
+                  return []
+            
+            if "sale_id" not in df.columns:
+                  raise ValueError("Expected a 'Sale Id' column in the Excel source.")
+
+            df["sale_id"] = df["sale_id"].apply(self._parse_sale_id)
+            df = df.dropna(subset=["sale_id"]).copy()
+            df["sale_id"] = df["sale_id"].astype(int)
+                  
+
+            grouped_sales: list[RawSale] = []
+            for _, group in df.groupby("sale_id", sort=True):
+                  sale = self._build_sale(group.reset_index(drop=True))
+                  if sale is not None:
+                        grouped_sales.append(sale)
+
+            return grouped_sales
+
+      def _build_sale(self, group: pd.DataFrame) -> RawSale | None:
+            if group.empty:
+                  return None
+
+            header = group.iloc[0]
+            customer_name = self._clean_string(header.get("customer_name"))
+            payments = self._parse_payments(header.get("payment_type"))
+            
+            quantities = pd.to_numeric(group["quantity"], errors="coerce").fillna(0)
+
+            is_discount_mask = group["item_name"].apply(self._is_discount)
+
+            # Only real items
+            real_quantities = quantities[~is_discount_mask]
+
+            items_sold = int(real_quantities[real_quantities > 0].sum())
+            items_returned = int(abs(real_quantities[real_quantities < 0].sum()))
+    
+            return RawSale(
+                  pos_sale_id=str(int(header["sale_id"])),
+                  pos_customer_id=self._stringify_number(header["pos_customer_id"]),
+                  invoice_datetime=self._stringify(header.get("invoice_datetime")),
+                  salesperson=self._clean_string(header.get("salesperson")),
+                  customer_name=customer_name,
+                  invoice_total=self._stringify_number(header.get("invoice_total")),
+                  items_sold=self._stringify_number(items_sold),
+                  items_returned=self._stringify_number(items_returned),
+                  comment=self._clean_string(header.get("comment")),
+                  items=[self._build_item(row) for _, row in group.iterrows()],
+                  payments=payments,
+            )
+
+      def _build_item(self, row: pd.Series) -> RawSaleItem:
+            return RawSaleItem(
+                  pos_sale_id=self._stringify_number(row.get("sale_id")),
+                  pos_item_id=self._stringify_number(row.get("pos_item_id")),
+                  name=self._clean_string(row.get("item_name")),
+                  quantity=self._stringify_number(row.get("quantity")),
+                  unit_price=self._stringify_number(row.get("unit_price")),
+                  total=self._stringify_number(row.get("line_total")),
+            )
+
+      def _parse_payments(self, value: Any) -> list[RawPayment]:
+            text = self._clean_string(value)
+            if not text:
+                  return []
+
+            payments: list[RawPayment] = []
+            for channel, amount in self._PAYMENT_PATTERN.findall(text):
+                  channel_name = re.sub(r"\s+", " ", channel).strip().upper()
+                  clean_amount = self._normalise_payment_amount(amount)
+
+                  if channel_name:
+                        payments.append(
+                              RawPayment(channel=channel_name, amount=clean_amount)
+                        )
+
+            return payments
+
+      def _parse_sale_id(self, value: Any) -> int | None:
+            if pd.isna(value):
+                  return None
+
+            match = re.search(r"\d+", str(value).strip())
+            return int(match.group()) if match else None
+
+      def _normalise_payment_amount(self, amount: str) -> str:
+            compact = amount.replace(" ", "")
+            compact = compact.replace("N", "").replace("₦", "")
+            if compact.startswith("--"):
+                  compact = compact[1:]
+            return compact
+
+      def _column_map(self) -> dict[str, str]:
+            return {
+                  "sale_id": "sale_id",
+                  "date": "invoice_datetime",
+                  "sold_by": "salesperson",
+                  "sold_to": "customer_name",
+                  "items_purchased": "items_sold",
+                  "total_1": "invoice_total",
+                  "payment_type": "payment_type",
+                  "comments": "comment",
+                  "item_id": "pos_item_id",
+                  "name": "item_name",
+                  "quantity_sold": "quantity",
+                  "selling_price": "unit_price",
+                  "total": "line_total",
+                  "person_id": "pos_customer_id",
+            }
+
+      def _is_discount(self, name: str | None) -> bool:
+            if not name:
+                  return False
+            return "discount" in name.lower()

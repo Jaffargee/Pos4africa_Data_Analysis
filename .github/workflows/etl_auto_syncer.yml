@@ -1,0 +1,53 @@
+name: Auto Sync Pipeline
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * *'   # every 24 hours
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    environment: ".env"
+    env:
+      POS_BASE_URL: ${{ secrets.POS_BASE_URL }}
+      POS_USERNAME: ${{ secrets.POS_USERNAME }}
+      POS_PASSWORD: ${{ secrets.POS_PASSWORD }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Debug env presence (safe)
+        run: |
+          python - <<'PY'
+          import os
+          for k in ("POS_BASE_URL","POS_USERNAME","POS_PASSWORD","SUPABASE_URL","SUPABASE_KEY"):
+              v = os.environ.get(k)
+              print(f"{k} present: {v is not None}, length: {len(v) if v else 0}")
+          print('.env exists:', __import__('os').path.exists('.env'))
+          PY
+
+      - name: Create .env from secrets
+        run: |
+          cat > .env <<EOF
+          POS_BASE_URL=${POS_BASE_URL}
+          POS_USERNAME=${POS_USERNAME}
+          POS_PASSWORD=${POS_PASSWORD}
+          SUPABASE_URL=${SUPABASE_URL}
+          SUPABASE_KEY=${SUPABASE_KEY}
+          EOF
+
+      - name: Run auto-sync
+        run: python -m pos4africa.auto_sync all

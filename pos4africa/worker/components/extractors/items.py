@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import pandas as pd
+
+from pos4africa.shared.models.item import Item
+from pos4africa.worker.components.base import BaseComponent
+from pos4africa.manager.memory.store import MemoryStore
+from pos4africa.worker.components.extractors.extractor import Extractor
+
+class ItemExtractor(BaseComponent, Extractor):
+
+      async def run(self, excel_path, sheet_name = 0):
+            return self._extract(excel_path=excel_path, sheet_name=sheet_name)
+
+      def _extract(self, excel_path, sheet_name = 0) -> list[Item]:
+            df = pd.read_excel(excel_path, sheet_name=sheet_name)
+            df = self._normalise_dataframe(df)
+
+            df['quantity'] = df['quantity'].fillna(0)
+
+            if df.empty:
+                  return []
+
+            items: list[Item] = []
+            for _, row in df.iterrows():
+                  item = self._build_catalog(row)
+                  if item is not None:
+                        items.append(item)
+            return items
+
+      def _build_catalog(self, row: pd.Series) -> Item | None:
+            item_id = row.get("pos_item_id")
+
+            if pd.isna(item_id):
+                  return None
+
+            item_name = row.get("item_name")
+            category = row.get("category")
+            cost_price = row.get("cost_price")
+            selling_price = row.get("selling_price")
+            quantity = row.get("quantity")
+
+            quantity = float(quantity) if not pd.isna(quantity) else 0
+            item_id = int(item_id)
+
+            return Item(
+                  pos_item_id=item_id,
+                  item_name=item_name,
+                  category=category,
+                  cost_price=cost_price,
+                  selling_price=selling_price,
+                  quantity=quantity,
+            )
+
+      def _column_map(self):
+            return {
+                  "item_id": "pos_item_id",
+                  "item_name": "item_name",
+                  "category": "category",
+                  "cost_price": "cost_price",
+                  "selling_price": "selling_price",
+                  "quantity": "quantity",
+            }
