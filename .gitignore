@@ -5,3 +5,4 @@ Excels/
 customers.sync.json
 reassign_results.jsonl
 schema.sql
+.gitignore
