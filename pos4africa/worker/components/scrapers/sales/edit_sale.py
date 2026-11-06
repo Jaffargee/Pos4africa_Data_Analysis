@@ -78,7 +78,6 @@ class SaleSnapshot:
                   self.sale_id,
                   self.total,
                   self.amount_due,
-                  # self.comment,
                   self.lines,
                   self.payments,
             )
@@ -184,37 +183,6 @@ class EditSale(BaseComponent):
             )
 
       async def _open_sale(self, sale_id: int) -> SaleSnapshot:
-            """GET change_sale/{id}: loads the sale into the edit cart and returns what we parsed."""
-            # resp = await self._connector.session.get(
-            #       CHANGE_SALE_PATH.format(sale_id=sale_id), follow_redirects=True
-            # )
-
-            # resp.raise_for_status()
-            # snap = self._parse_sale_page(resp.text)
-
-            # if snap.sale_code is None:
-            #       raise NotInEditModeError(f"sale {sale_id}: no 'Editing Sale' banner (session expired, bad id or no permission)")
-            
-            # if snap.sale_code is not None and snap.sale_code != sale_id:
-            #       """
-            #       The Sale id of the receipt and URL sale id are different because of store account payment ids
-            #       So you calculate the actual sale id page based on the offset of the store account payment 
-            #       and both the sale_id and snap sale_id
-            #       """
-            #       real_sale_id = sale_id + (sale_id - snap.sale_code)
-            #       resp = await self._connector.session.get(CHANGE_SALE_PATH.format(sale_id=real_sale_id), follow_redirects=True)
-            #       resp.raise_for_status()
-            #       snap = self._parse_sale_page(resp.text)
-
-            #       self.log.info(
-            #             "edit.opened",
-            #             sale_id=sale_id,
-            #             sale_code=snap.sale_code,
-            #             customer_id=snap.customer_id,
-            #             total=str(snap.total),
-            #             lines=len(snap.lines),
-            #       )
-            #       return snap
             url_id = sale_id
             for _ in range(6):
                   resp = await self._connector.session.get(CHANGE_SALE_PATH.format(sale_id=url_id), follow_redirects=True)
@@ -274,7 +242,77 @@ class EditSale(BaseComponent):
             resp.raise_for_status()
             self.log.info("edit.discarded")
 
+      async def _sale_authenticated(self, sale_id: int, expected_current_person_id: int | None, expected_total: int | None, before: SaleSnapshot) -> bool:
+
+            # fp_snap = SaleSnapshot(
+            #       sale_id=sale_id,
+            #       sale_code=before.sale_code,
+            #       customer_id=expected_current_person_id,
+            #       customer_name=before.customer_name,
+            #       total=expected_total,
+            #       amount_due=before.amount_due,
+            #       comment=before.comment,
+            #       lines=before.lines,
+            #       payments=before.payments,
+            # )
+
+            # if fp_snap.fingerprint() != before.fingerprint():
+            #       raise SaleMismatchError("Not the same sale: cart contents are different from expected; aborting")
+            
+            if (expected_current_person_id is not None and before.customer_id != expected_current_person_id):
+                  raise SaleMismatchError(
+                        f"sale {sale_id} belongs to customer {before.customer_id}, "
+                        f"expected {expected_current_person_id}"
+                  )
+
+            if expected_total is not None and Decimal(str(expected_total)) != before.total:
+                  raise SaleMismatchError(f"POS total {before.total} != expected {expected_total}")
+                  
+
       # -- orchestration ----------------------------------------------------- #
+      @with_retry_async
+      async def edit_comment(
+            self,
+            sale_id: int,
+            comment: str,
+            *,
+            expected_current_person_id: int | None = None,
+            expected_total: int | None = None,
+            commit: bool = False,
+      ) -> dict:
+            before = await self._open_sale(sale_id)
+            try:
+                  await self._sale_authenticated( sale_id, expected_current_person_id, expected_total, before)
+                  after = await self._set_comment(comment)
+
+                  if after.comment and before.comment and after.comment == before.comment:
+                        raise SaleMismatchError(f"comment not applied: cart shows {after.comment}")
+                  
+                  if after.fingerprint() != before.fingerprint():
+                        raise SaleMismatchError("cart contents changed during customer swap; aborting")
+
+                  if not commit:
+                        await self._discard()
+                        self.log.info("edit.dry_run_ok", sale_id=sale_id, customer_id=before.customer_id)
+                        return {"sale_id": sale_id, "changed": True, "committed": False}
+
+                  final_url = await self._complete()
+                  return {
+                        "sale_id": sale_id,
+                        "changed": True,
+                        "committed": True,
+                        "final_url": final_url,
+                        "person_id": before.customer_id,
+                  }
+            
+            except Exception:
+                  # never leave a half-edited cart in the shared session
+                  try:
+                        await self._discard()
+                  except Exception as exc:  # pragma: no cover
+                        self.log.error("edit.discard_failed", error=str(exc))
+                  raise
+
       @with_retry_async
       async def reassign(
             self,
@@ -294,23 +332,14 @@ class EditSale(BaseComponent):
             # async with self._session_lock:
             before = await self._open_sale(sale_id)
             try:
-                  if (
-                        expected_current_person_id is not None
-                        and before.customer_id != expected_current_person_id
-                  ):
-                        raise SaleMismatchError(
-                              f"sale {sale_id} belongs to customer {before.customer_id}, "
-                              f"expected {expected_current_person_id}"
-                        )
-
-                  if expected_total is not None and Decimal(str(expected_total)) != before.total:
-                        raise SaleMismatchError(f"POS total {before.total} != expected {expected_total}")
                   
+                  await self._sale_authenticated(sale_id, expected_current_person_id, expected_total, before)
+
                   if before.customer_id == new_person_id:
                         self.log.info("edit.already_assigned", sale_id=sale_id, person_id=new_person_id)
-                        await self.discard()
+                        await self._discard()
                         return {"sale_id": sale_id, "changed": False, "committed": False}
-
+                  
                   after = await self._select_customer(new_person_id)
                   after = await self._set_comment("")
 

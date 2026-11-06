@@ -64,18 +64,30 @@ class Scanner(BaseComponent):
             return df
 
       def _get_comments(self, df: pd.DataFrame, min_count: int = 3) -> list[dict]:
+
+            _excludes_comments = ("CUSTOMER", "CTM", "ABBA TAHIR", "FAHAD TAHIR")
             
             if "comment" not in df.columns:
                   raise KeyError("The 'comment' column is missing from the fetched sales data.")
-            
+
+            df = df.dropna(subset=["comment"])
+            df = df[~df["comment"].isin(_excludes_comments)]
+
             comment_counts = (
                   df.groupby("comment", dropna=False)
                   .size()
                   .reset_index(name="count")
             )
-            comment_counts = comment_counts[comment_counts["count"] > min_count]
+
+            # comment_counts = comment_counts[comment_counts["count"] > min_count]
             comment_counts = comment_counts.sort_values(by="count", ascending=False).reset_index(drop=True)
 
             return comment_counts.to_dict(orient="records")
 
-      
+
+      def get_sales_by_comment(self, df: pd.DataFrame, comment: str) -> list[dict]:
+            if "comment" not in df.columns:
+                  raise KeyError("The 'comment' column is missing from the fetched sales data.")
+
+            filtered_df = df[df["comment"] == comment].copy()
+            return filtered_df.to_dict(orient="records")

@@ -41,7 +41,7 @@ class Breaker:
       def fail(self, reason: str) -> None:
             self._streak += 1
             if self._streak >= self.limit:
-                  self.trip(f"{self._consecutive} consecutive failures, last: {reason}")
+                  self.trip(f"{self.limit} consecutive failures, last: {reason}")
 
       def trip(self, reason: str) -> None:
             if not self.tripped.is_set():
@@ -206,23 +206,47 @@ def load_jobs(df: pd.DataFrame, matched_data: list[MatchedResults]) -> list[Job]
 
 class S2CMapper(BaseComponent):
 
+      def __init__(self):
+            super().__init__()
+            self._repo = Repository()
+            self._scanner = Scanner()
+            self._syncer = Syncer()
+            self._sales = self._repo.get_sales()
+            self._df = self._scanner.init(self._sales)
+
+      async def mapper_editor(self, comment: str, new_comment: str, commit: bool = False) -> None:
+            async with PosConnector() as connector:
+                  self._editor = EditSale(connector=connector)
+                  sales = self._scanner.get_sales_by_comment(self._df, comment=comment)
+
+                  if not sales:
+                        log.warning("No sales found for comment: %s", comment)
+                        return
+                  
+                  for sale in sales:
+                        await self._editor.edit_comment(
+                              sale_id=sale["pos_sale_id"],
+                              comment=new_comment, 
+                              expected_total=sale["invoice_total"], 
+                              expected_current_person_id=sale["pos_customer_id"], 
+                              commit=commit
+                        )
+
+                  log.info("Reassigned %d sales from comment '%s' to '%s'", len(sales), comment, new_comment)
+
       async def run(self, ctx: PipelineContext):
-            repo = Repository()
-            syncer = Syncer()
-            scanner = Scanner()
-            orchestrator = Orchestrator(n_workers=10, commit=False, breaker_limit=5)
+            orchestrator = Orchestrator(n_workers=10, commit=True, breaker_limit=5)
 
-            sales = repo.get_sales()
+            comments = self._scanner.get_comment_frequencies(self._df)
+            customers = self._syncer.load_json_object(self._syncer.customers_local_db_file_path)
 
-            df = scanner.init(sales)
-            comments = scanner.get_comment_frequencies(df)
-            customers = syncer.load_json_object(syncer.customers_local_db_file_path)
+            results = self._syncer.match_comments_to_customers(comments, customers)
 
-            results = syncer.match_comments_to_customers(comments, customers)
-
-            jobs: list[Job] = load_jobs(df, results) 
+            jobs: list[Job] = load_jobs(self._df, results) 
 
             orchestrator_results = await orchestrator.run(jobs, report_path="reassign_results.jsonl")
 
             for result in orchestrator_results:
                   log.info("sale %s: %s", result.sale_id, result.status)
+
+            ctx.data["reassign_results"] = orchestrator_results
