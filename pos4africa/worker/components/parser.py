@@ -14,6 +14,7 @@ from pos4africa.shared.models.sale import (
       Sale,
       SaleItem,
 )
+from pos4africa.shared.utils.sale_ref import strip_ref
 from pos4africa.worker.components.base import BaseComponent
 
 _DATE_FORMATS = [
@@ -45,7 +46,7 @@ class Parser(BaseComponent):
                   items_sold=items_sold,
                   items_returned=items_returned,
                   items_net=items_sold - items_returned,
-                  comment=self._clean_str(raw.comment),
+                  comment=self._clean_str(strip_ref(raw.comment)),
                   items=[self._parse_item(item) for item in raw.items],
                   payments=[self._parse_payment(payment) for payment in raw.payments],
             )

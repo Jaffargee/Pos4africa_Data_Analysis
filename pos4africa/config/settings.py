@@ -7,8 +7,9 @@ class Settings(BaseSettings):
             env_file=".env",
             env_file_encoding="utf-8",
             case_sensitive=False,
+            extra="ignore",   # the server shares this .env and adds its own keys
       )
-      
+
       pos_base_url: str
       pos_username: str
       pos_password: SecretStr
