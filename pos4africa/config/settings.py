@@ -17,6 +17,7 @@ class Settings(BaseSettings):
       pos_sales_path: str = "/index.php/sales/receipt"
       pos_customer_form: str = "/index.php/customers/view/-1/"
       pos_customer_form_action: str = "/index.php/customers/save/"
+      pos_customer_edit_form_action: str = "/index.php/customers/save/{person_id}"
       pos_customer_delete: str = "/index.php/customers/delete"
       
       pos_request_timeout: float = 30.0          # seconds per HTTP request
