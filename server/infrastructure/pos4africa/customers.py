@@ -61,9 +61,6 @@ class Customer:
             return await self.__write(settings.pos_customer_form_action, payload)
       
       async def __write(self, endpoint: str, payload: dict):
-            if not self._customer_data:
-                  raise ValueError("Customer data not set")
-
             if not endpoint.startswith("/"):
                   raise ValueError("Endpoint must start with '/'")
 
@@ -91,5 +88,4 @@ class Customer:
             if not body.get("success") or person_id <= 0:
                   raise POSRejectedError(body.get("message") or "unknown POS error")
 
-            self.log.info("save.created_customer", person_id=person_id)
             return {"message": "Customer created successfully", "person_id": person_id}

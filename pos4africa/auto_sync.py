@@ -130,7 +130,7 @@ class AutoSync:
             async with PosConnector() as connector:
                   logging.info("Starting auto-sync process...")
                   await self._sync_once(connector=connector)
-                  logging.info("Auto-sync process completed. Sleeping for 24 hours...")
+                  logging.info("Auto-sync process completed.")
                   if self.report == ALL_REPORT_URL:
                         self.report = TODAY_REPORT_URL
                         self.ran_all = True
