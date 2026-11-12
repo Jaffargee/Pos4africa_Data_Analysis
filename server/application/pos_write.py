@@ -8,7 +8,9 @@ guarantees:
   * single sender       - a compare-and-set claim, so concurrent duplicates send once
   * honest failure      - "POS said no" / "never sent" / "might have been applied" are
                           different states with different recovery paths
-  * resumability        - POS done but local commit failed? the log still has the POS id
+
+The server never writes business data to Supabase: once POS has the write, the ETL
+carries it into Supabase like every other POS change.
 """
 
 from __future__ import annotations
@@ -42,9 +44,6 @@ class WriteHandler(Protocol):
 
     async def resolve(self, entry: WriteLogEntry) -> int | None:
         """After an unknown outcome: the POS id if the write landed, None if provably not."""
-
-    async def commit_local(self, entry: WriteLogEntry, pos_id: int) -> None:
-        """Mirror the POS result into Supabase.  Must be idempotent."""
 
 
 @dataclass
@@ -83,7 +82,7 @@ class PosWriteSaga:
         if entry is None:
             return None
         self._check_same_request(entry, request_hash)
-        return _result(entry, replayed=True) if entry.status is WriteStatus.SYNCED else None
+        return _result(entry, replayed=True) if entry.status is WriteStatus.POSTED else None
 
     @staticmethod
     def _check_same_request(entry: WriteLogEntry, request_hash: str) -> None:
@@ -107,10 +106,8 @@ class PosWriteSaga:
         if not created:
             self._check_same_request(entry, request_hash)
             status = entry.status
-            if status is WriteStatus.SYNCED:
-                return _result(entry, replayed=True)
             if status is WriteStatus.POSTED:
-                return await self._finish(handler, entry)  # resume: POS has it, finish locally
+                return _result(entry, replayed=True)
             if status in (WriteStatus.SENDING, WriteStatus.UNCERTAIN):
                 raise ConflictError(
                     f"Request {ref} is {status.value}: it may already have reached POS. "
@@ -142,21 +139,6 @@ class PosWriteSaga:
             raise PosOutcomeUnknownError(str(exc)) from exc
 
         entry = await self._log.transition(entry.id, (WriteStatus.SENDING,), WriteStatus.POSTED, pos_id=pos_id)
-        return await self._finish(handler, entry)
-
-    async def _finish(self, handler: WriteHandler, entry: WriteLogEntry) -> WriteResult:
-        """POS has it.  Mirror locally, then close the log entry."""
-        assert entry.pos_id is not None
-        try:
-            await handler.commit_local(entry, entry.pos_id)
-        except Exception as exc:
-            # The POS write is real and its id is safe in the log; reconcile will finish this.
-            log.exception("local commit failed for %s (POS id %s)", entry.ref, entry.pos_id)
-            entry = await self._log.transition(
-                entry.id, (WriteStatus.POSTED,), WriteStatus.POSTED, error=f"local commit failed: {exc}"
-            )
-            return _result(entry)
-        entry = await self._log.transition(entry.id, (WriteStatus.POSTED,), WriteStatus.SYNCED, error="")
         return _result(entry)
 
     async def _settle(self, entry: WriteLogEntry, status: WriteStatus, *, error: str, retryable: bool | None = None) -> None:
@@ -168,21 +150,16 @@ class PosWriteSaga:
     # -- reconcile ---------------------------------------------------------------------
     async def reconcile(self, entry: WriteLogEntry) -> WriteLogEntry:
         """Bring one stuck entry to a final state without ever sending a second write."""
-        handler = self._handlers[entry.kind]
-        if entry.status is WriteStatus.POSTED:
-            return (await self._finish(handler, entry)).entry  # type: ignore[return-value]
         if entry.status not in (WriteStatus.SENDING, WriteStatus.UNCERTAIN):
             return entry
-
         expected = (WriteStatus.SENDING, WriteStatus.UNCERTAIN)
-        pos_id = await handler.resolve(entry)
+        pos_id = await self._handlers[entry.kind].resolve(entry)
         if pos_id is None:
             return await self._log.transition(
                 entry.id, expected, WriteStatus.FAILED,
                 error="not found in POS during reconciliation", retryable=True,
             )
-        posted = await self._log.transition(entry.id, expected, WriteStatus.POSTED, pos_id=pos_id, error="")
-        return (await self._finish(handler, posted)).entry  # type: ignore[return-value]
+        return await self._log.transition(entry.id, expected, WriteStatus.POSTED, pos_id=pos_id, error="")
 
     async def reconcile_open(self, grace: timedelta) -> list[WriteLogEntry]:
         cutoff = datetime.now(timezone.utc) - grace

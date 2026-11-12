@@ -20,13 +20,8 @@ class PosCustomerGateway(Protocol):
 
 
 class CustomerRepository(Protocol):
-    """Supabase side (the analytics copy)."""
-
-    async def search(self, q: str | None, limit: int, offset: int) -> list[dict]: ...
+    """Read-only view of the analytics copy in Supabase (the ETL writes it)."""
 
     async def get(self, pos_customer_id: int) -> dict | None: ...
 
     async def find_by_name(self, first_name: str, last_name: str | None) -> list[dict]: ...
-
-    async def save_from_pos(self, pos_customer_id: int, fields: dict) -> None:
-        """Idempotent upsert keyed on pos_customer_id; only the given fields change."""

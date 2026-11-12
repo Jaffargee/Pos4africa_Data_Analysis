@@ -69,19 +69,16 @@ class InMemoryWriteLog:
 
 
 class FakeCustomerRepo:
+    """Read-only view of Supabase customers."""
+
     def __init__(self):
         self.rows: dict[int, dict] = {}
-        self.fail_save: Exception | None = None
 
     def add(self, pos_customer_id: int, first_name: str, last_name: str | None = None):
         self.rows[pos_customer_id] = {
             "pos_customer_id": pos_customer_id, "first_name": first_name, "last_name": last_name,
             "customer_name": f"{first_name} {last_name or ''}".strip(), "company_name": None,
         }
-
-    async def search(self, q, limit, offset):
-        rows = [r for r in self.rows.values() if not q or q.lower() in r["customer_name"].lower()]
-        return rows[offset: offset + limit]
 
     async def get(self, pos_customer_id):
         return self.rows.get(pos_customer_id)
@@ -90,13 +87,6 @@ class FakeCustomerRepo:
         return [r for r in self.rows.values()
                 if r["first_name"].lower() == first_name.lower()
                 and (r["last_name"] or "").lower() == (last_name or "").lower()]
-
-    async def save_from_pos(self, pos_customer_id, fields):
-        if self.fail_save:
-            raise self.fail_save
-        row = self.rows.setdefault(pos_customer_id, {"pos_customer_id": pos_customer_id})
-        row.update(fields)
-        row["customer_name"] = f"{row.get('first_name', '')} {row.get('last_name') or ''}".strip()
 
 
 class FakeCustomerGateway:
@@ -167,28 +157,12 @@ class FakeSalesGateway:
         )
 
 
-class FakeSaleRepo:
+class FakeAccountRepo:
     def __init__(self):
-        self.accounts: dict[UUID, str] = {}
-        self.committed: list[tuple[int, ResolvedSale]] = []
-        self.fail_commit: Exception | None = None
-
-    async def list(self, pos_customer_id, limit, offset):
-        return []
-
-    async def get(self, pos_sale_id):
-        return None
+        self.rows: dict[UUID, str] = {}
 
     async def get_accounts(self, ids):
-        return {i: self.accounts[i] for i in ids if i in self.accounts}
-
-    async def commit_sale(self, pos_sale_id, sale):
-        if self.fail_commit:
-            raise self.fail_commit
-        if any(p == pos_sale_id for p, _ in self.committed):
-            return False
-        self.committed.append((pos_sale_id, sale))
-        return True
+        return {i: self.rows[i] for i in ids if i in self.rows}
 
 
 class FakeItemRepo:
@@ -202,5 +176,3 @@ class FakeItemRepo:
     async def get_many(self, ids):
         return {i: self.rows[i] for i in ids if i in self.rows}
 
-    async def search(self, q, limit):
-        return [r for r in self.rows.values() if not q or q.lower() in r["item_name"].lower()][:limit]

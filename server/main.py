@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from server.api import customers_router, items_router, recon_router, sales_router
+from server.api import customers_router, recon_router, sales_router
 from server.api.errors import register_error_handlers
 from server.container import Container
 
@@ -76,6 +76,6 @@ def create_app(container: Container | None = None) -> FastAPI:
         c: Container = app.state.container
         return {"status": "ok", "pos_write_mode": c.settings.pos_write_mode}
 
-    for router in (customers_router, sales_router, items_router, recon_router):
+    for router in (customers_router, sales_router, recon_router):
         app.include_router(router)
     return app

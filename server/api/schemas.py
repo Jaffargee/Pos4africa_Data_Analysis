@@ -18,13 +18,8 @@ class WriteResponse(BaseModel):
 
 
 def write_response(result: WriteResult, response: Response) -> WriteResponse:
-    """201 created | 200 replay or dry run | 202 POS has it, local mirror still pending."""
-    if result.replayed or result.dry_run:
-        response.status_code = 200
-    elif result.status is WriteStatus.POSTED:
-        response.status_code = 202
-    else:
-        response.status_code = 201
+    """201 written to POS | 200 replay of an earlier request, or a dry run."""
+    response.status_code = 200 if (result.replayed or result.dry_run) else 201
     return WriteResponse(
         ref=result.ref, kind=result.kind, status=result.status, pos_id=result.pos_id,
         replayed=result.replayed, dry_run=result.dry_run, error=result.error,

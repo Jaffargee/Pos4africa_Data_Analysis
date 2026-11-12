@@ -25,8 +25,8 @@ def test_health_is_open_and_reports_mode(api):
 @pytest.mark.parametrize("headers", [{}, {"X-API-Key": "wrong"}])
 def test_every_data_route_requires_the_api_key(api, headers):
     client, _ = api
-    for method, path in [("get", "/customers"), ("get", "/sales"), ("get", "/items"), ("get", "/recon"),
-                         ("post", "/customers"), ("post", "/sales"), ("post", "/recon/reconcile")]:
+    for method, path in [("post", "/customers"), ("patch", "/customers/10"), ("post", "/sales"),
+                         ("get", "/recon"), ("post", "/recon/reconcile")]:
         assert getattr(client, method)(path, headers=headers).status_code == 401, path
 
 
@@ -42,7 +42,7 @@ def test_create_then_replay(api):
     client, w = api
     first = client.post("/customers", json=CUSTOMER, headers=WRITE)
     assert first.status_code == 201
-    assert first.json()["status"] == "SYNCED" and first.json()["pos_id"] == 501
+    assert first.json()["status"] == "POSTED" and first.json()["pos_id"] == 501
 
     again = client.post("/customers", json=CUSTOMER, headers=WRITE)
     assert again.status_code == 200 and again.json()["replayed"] is True
@@ -76,8 +76,8 @@ def test_unknown_outcome_blocks_resend_until_reconciled(api):
     (entry,) = client.get("/recon", params={"status": "UNCERTAIN"}, headers=AUTH).json()
     w.pos_customers.find_result = 900
     r = client.post(f"/recon/{entry['ref']}/reconcile", headers=AUTH)
-    assert r.status_code == 200 and r.json()["status"] == "SYNCED" and r.json()["pos_id"] == 900
-    assert client.get(f"/recon/{entry['ref']}", headers=AUTH).json()["status"] == "SYNCED"
+    assert r.status_code == 200 and r.json()["status"] == "POSTED" and r.json()["pos_id"] == 900
+    assert client.get(f"/recon/{entry['ref']}", headers=AUTH).json()["status"] == "POSTED"
     assert client.get("/recon/NOPE", headers=AUTH).status_code == 404
 
 
@@ -102,13 +102,11 @@ def test_sale_end_to_end_over_http(api):
     assert r.status_code == 422 and r.json()["error"] == "validation_failed"
 
 
-def test_reads(api):
+def test_the_server_exposes_no_read_endpoints_the_dashboard_reads_supabase(api):
     client, w = api
     w.customers.add(10, "Aisha", "Bello")
-    assert client.get("/customers", params={"q": "aish"}, headers=AUTH).json()[0]["pos_customer_id"] == 10
-    assert client.get("/customers/10", headers=AUTH).status_code == 200
-    assert client.get("/customers/11", headers=AUTH).status_code == 404
-    assert client.get("/items", params={"q": "rice"}, headers=AUTH).json()[0]["pos_item_id"] == 1
+    for path in ("/customers", "/customers/10", "/sales", "/sales/1", "/items"):
+        assert client.get(path, headers=AUTH).status_code in (404, 405), path
 
 
 def test_patch_customer(api):
@@ -116,6 +114,6 @@ def test_patch_customer(api):
     w.customers.add(10, "Aisha", "Bello")
     r = client.patch("/customers/10", json={"state": "Lagos"}, headers=WRITE)
     assert r.status_code == 201 or r.status_code == 200
-    assert w.customers.rows[10]["state"] == "Lagos"
+    assert w.pos_customers.update_calls[0][0] == 10 and w.pos_customers.update_calls[0][1].state == "Lagos"
     assert client.patch("/customers/10", json={}, headers=WRITE).status_code == 422
     assert client.patch("/customers/99", json={"state": "x"}, headers={**AUTH, "Idempotency-Key": "client-key-0002"}).status_code == 404

@@ -11,12 +11,12 @@ from server.domain.write_log import WriteStatus
 REQ = CustomerCreateRequest(first_name="Aisha", last_name="Bello", phone_number="0803 123 4567", state="Kano")
 
 
-async def test_create_happy_path_mirrors_locally(world):
+async def test_create_happy_path_records_the_pos_id(world):
     result = await world.container.create_customer.execute(REQ, "key-0001")
 
-    assert result.status is WriteStatus.SYNCED and result.pos_id == 501 and not result.replayed
-    assert world.customers.rows[501]["first_name"] == "Aisha"
+    assert result.status is WriteStatus.POSTED and result.pos_id == 501 and not result.replayed
     assert len(world.pos_customers.create_calls) == 1
+    assert world.customers.rows == {}  # the server never writes to Supabase; the ETL will
 
 
 async def test_same_key_replays_without_touching_pos_again(world):
@@ -65,7 +65,7 @@ async def test_unreachable_pos_is_retryable_with_the_same_key(world):
     assert entry.status is WriteStatus.FAILED and entry.retryable is True
 
     result = await world.container.create_customer.execute(REQ, "key-0001")
-    assert result.status is WriteStatus.SYNCED
+    assert result.status is WriteStatus.POSTED
     assert (await world.log.list())[0].attempts == 2
 
 
@@ -82,8 +82,7 @@ async def test_lost_reply_never_blind_retries_and_reconciles_to_the_real_id(worl
     world.log.age_all()
     done = await world.container.reconciler.all_open()
 
-    assert [e.status for e in done] == [WriteStatus.SYNCED] and done[0].pos_id == 777
-    assert world.customers.rows[777]["first_name"] == "Aisha"
+    assert [e.status for e in done] == [WriteStatus.POSTED] and done[0].pos_id == 777
     assert len(world.pos_customers.create_calls) == 1  # still exactly one send
 
 
@@ -98,26 +97,14 @@ async def test_lost_reply_that_provably_did_not_land_becomes_retryable(world):
     assert entry.status is WriteStatus.FAILED and entry.retryable
 
     result = await world.container.create_customer.execute(REQ, "key-0001")
-    assert result.status is WriteStatus.SYNCED and len(world.pos_customers.create_calls) == 2
+    assert result.status is WriteStatus.POSTED and len(world.pos_customers.create_calls) == 2
 
 
-async def test_pos_succeeds_but_local_commit_fails_keeps_the_pos_id_and_recovers(world):
-    world.customers.fail_save = RuntimeError("supabase down")
-    result = await world.container.create_customer.execute(REQ, "key-0001")
-    assert result.status is WriteStatus.POSTED and result.pos_id == 501
-    assert "local commit failed" in (result.error or "")
-
-    world.customers.fail_save = None
-    (entry,) = await world.container.reconciler.all_open()
-    assert entry.status is WriteStatus.SYNCED and world.customers.rows[501]["first_name"] == "Aisha"
-    assert len(world.pos_customers.create_calls) == 1
-
-
-async def test_dry_run_rehearses_but_logs_and_changes_nothing(dry_world):
+async def test_dry_run_rehearses_but_logs_nothing(dry_world):
     result = await dry_world.container.create_customer.execute(REQ, "key-0001")
     assert result.dry_run and result.status is None
     assert dry_world.pos_customers.create_calls[0][1] is False  # commit=False
-    assert dry_world.log.rows == {} and dry_world.customers.rows == {}
+    assert dry_world.log.rows == {}
 
 
 async def test_duplicate_name_guard(world):
@@ -126,7 +113,7 @@ async def test_duplicate_name_guard(world):
         await world.container.create_customer.execute(REQ, "key-0001")
 
     ok = CustomerCreateRequest(**{**REQ.model_dump(), "allow_duplicate": True})
-    assert (await world.container.create_customer.execute(ok, "key-0002")).status is WriteStatus.SYNCED
+    assert (await world.container.create_customer.execute(ok, "key-0002")).status is WriteStatus.POSTED
 
 
 async def test_update_unknown_outcome_is_retryable_not_uncertain(world):
@@ -139,7 +126,8 @@ async def test_update_unknown_outcome_is_retryable_not_uncertain(world):
     assert entry.status is WriteStatus.FAILED and entry.retryable  # updates are idempotent
 
     result = await world.container.update_customer.execute(10, req, "key-0001")
-    assert result.status is WriteStatus.SYNCED and world.customers.rows[10]["state"] == "Lagos"
+    assert result.status is WriteStatus.POSTED and len(world.pos_customers.update_calls) == 2
+    assert world.pos_customers.update_calls[-1][1].state == "Lagos"
 
 
 def test_request_validation():

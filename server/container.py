@@ -16,7 +16,7 @@ from server.application.sales.create import CreateSale, SaleHandler
 from server.config import ServerSettings
 from server.domain.customers.ports import CustomerRepository, PosCustomerGateway
 from server.domain.ports import WriteLogRepository
-from server.domain.sales.ports import ItemRepository, PosSalesGateway, SaleRepository
+from server.domain.sales.ports import AccountRepository, ItemRepository, PosSalesGateway
 from server.domain.write_log import WriteKind
 
 
@@ -24,9 +24,6 @@ from server.domain.write_log import WriteKind
 class Container:
     settings: ServerSettings
     write_log: WriteLogRepository
-    customers: CustomerRepository
-    sales: SaleRepository
-    items: ItemRepository
     saga: PosWriteSaga
     create_customer: CreateCustomer
     update_customer: UpdateCustomer
@@ -48,24 +45,24 @@ def assemble(
     *,
     write_log: WriteLogRepository,
     customers: CustomerRepository,
-    sales: SaleRepository,
+    accounts: AccountRepository,
     items: ItemRepository,
     pos_customers: PosCustomerGateway,
     pos_sales: PosSalesGateway,
     pool: object | None = None,
 ) -> Container:
     handlers = {
-        WriteKind.CUSTOMER_CREATE: CreateCustomerHandler(pos_customers, customers),
-        WriteKind.CUSTOMER_UPDATE: UpdateCustomerHandler(pos_customers, customers),
-        WriteKind.SALE_CREATE: SaleHandler(pos_sales, sales),
+        WriteKind.CUSTOMER_CREATE: CreateCustomerHandler(pos_customers),
+        WriteKind.CUSTOMER_UPDATE: UpdateCustomerHandler(pos_customers),
+        WriteKind.SALE_CREATE: SaleHandler(pos_sales),
     }
     saga = PosWriteSaga(write_log, handlers, settings.pos_write_mode)
     return Container(
-        settings=settings, write_log=write_log, customers=customers, sales=sales, items=items, saga=saga,
+        settings=settings, write_log=write_log, saga=saga,
         create_customer=CreateCustomer(saga, customers),
         update_customer=UpdateCustomer(saga, customers),
         create_sale=CreateSale(
-            saga, sales, customers, items,
+            saga, accounts, customers, items,
             walk_in_customer_id=settings.walk_in_customer_id, salesperson=settings.salesperson,
         ),
         reconciler=Reconciler(saga, write_log, settings.uncertain_grace_seconds),
@@ -78,9 +75,9 @@ def build_container(settings: ServerSettings) -> Container:
     from server.infrastructure.pos4africa.customers import PosCustomerGatewayImpl
     from server.infrastructure.pos4africa.sales import PosSalesGatewayImpl
     from server.infrastructure.pos4africa.session_pool import PosSessionPool
+    from server.infrastructure.supabase.accounts import SupabaseAccountRepository
     from server.infrastructure.supabase.customers import SupabaseCustomerRepository
     from server.infrastructure.supabase.items import SupabaseItemRepository
-    from server.infrastructure.supabase.sales import SupabaseSaleRepository
     from server.infrastructure.supabase.write_log import SupabaseWriteLog
 
     pool = PosSessionPool(settings.pos_session_pool_size, settings.pos_session_acquire_timeout)
@@ -88,7 +85,7 @@ def build_container(settings: ServerSettings) -> Container:
         settings,
         write_log=SupabaseWriteLog(),
         customers=SupabaseCustomerRepository(),
-        sales=SupabaseSaleRepository(),
+        accounts=SupabaseAccountRepository(),
         items=SupabaseItemRepository(),
         pos_customers=PosCustomerGatewayImpl(pool, settings),
         pos_sales=PosSalesGatewayImpl(pool, settings),

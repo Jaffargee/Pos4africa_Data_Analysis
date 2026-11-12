@@ -7,10 +7,10 @@ import pytest
 from server.config import ServerSettings
 from server.container import assemble
 from server.tests.fakes import (
+    FakeAccountRepo,
     FakeCustomerGateway,
     FakeCustomerRepo,
     FakeItemRepo,
-    FakeSaleRepo,
     FakeSalesGateway,
     InMemoryWriteLog,
 )
@@ -30,14 +30,14 @@ class World:
         self.log = InMemoryWriteLog()
         self.customers = FakeCustomerRepo()
         self.pos_customers = FakeCustomerGateway()
-        self.sales = FakeSaleRepo()
+        self.accounts = FakeAccountRepo()
         self.pos_sales = FakeSalesGateway()
         self.items = FakeItemRepo()
-        self.sales.accounts[CASH] = "CASH"
+        self.accounts.rows[CASH] = "CASH"
         self.items.add(1, "Rice 50kg", 80000, cost_price=70000)
         self.items.add(2, "Beans 25kg", 45000, cost_price=40000)
         self.container = assemble(
-            make_settings(mode), write_log=self.log, customers=self.customers, sales=self.sales, items=self.items,
+            make_settings(mode), write_log=self.log, customers=self.customers, accounts=self.accounts, items=self.items,
             pos_customers=self.pos_customers, pos_sales=self.pos_sales,
         )
 

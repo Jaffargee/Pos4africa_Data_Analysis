@@ -13,9 +13,8 @@ class UpdateCustomerHandler:
     kind = WriteKind.CUSTOMER_UPDATE
     idempotent = True  # re-applying the same field values is harmless
 
-    def __init__(self, gateway: PosCustomerGateway, repo: CustomerRepository):
+    def __init__(self, gateway: PosCustomerGateway):
         self._gateway = gateway
-        self._repo = repo
 
     @staticmethod
     def _parts(entry: WriteLogEntry) -> tuple[int, CustomerFields]:
@@ -26,11 +25,7 @@ class UpdateCustomerHandler:
         return await self._gateway.update(pos_id, changes, commit=commit)
 
     async def resolve(self, entry: WriteLogEntry) -> int | None:
-        return None  # never needed: unknown outcomes on updates are simply retryable
-
-    async def commit_local(self, entry: WriteLogEntry, pos_id: int) -> None:
-        _, changes = self._parts(entry)
-        await self._repo.save_from_pos(pos_id, changes.pos_fields())
+        return None  # never needed in practice: unknown outcomes on updates are simply retryable
 
 
 class UpdateCustomer:

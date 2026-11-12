@@ -16,7 +16,7 @@ from server.domain.sales.models import (
     compute_fingerprint,
     money,
 )
-from server.domain.sales.ports import ItemRepository, PosSalesGateway, SaleRepository
+from server.domain.sales.ports import AccountRepository, ItemRepository, PosSalesGateway
 from server.domain.write_log import WriteKind, WriteLogEntry
 from pos4africa.shared.utils.sale_ref import attach_ref, ref_from_key
 
@@ -25,9 +25,8 @@ class SaleHandler:
     kind = WriteKind.SALE_CREATE
     idempotent = False
 
-    def __init__(self, gateway: PosSalesGateway, repo: SaleRepository):
+    def __init__(self, gateway: PosSalesGateway):
         self._gateway = gateway
-        self._repo = repo
 
     @staticmethod
     def _sale(entry: WriteLogEntry) -> ResolvedSale:
@@ -57,15 +56,12 @@ class SaleHandler:
     async def resolve(self, entry: WriteLogEntry) -> int | None:
         return await self._find_verified(entry, self._sale(entry))
 
-    async def commit_local(self, entry: WriteLogEntry, pos_id: int) -> None:
-        await self._repo.commit_sale(pos_id, self._sale(entry))
-
 
 class CreateSale:
     def __init__(
         self,
         saga: PosWriteSaga,
-        sales: SaleRepository,
+        accounts: AccountRepository,
         customers: CustomerRepository,
         items: ItemRepository,
         *,
@@ -73,7 +69,7 @@ class CreateSale:
         salesperson: str,
     ):
         self._saga = saga
-        self._sales = sales
+        self._accounts = accounts
         self._customers = customers
         self._items = items
         self._walk_in = walk_in_customer_id
@@ -124,7 +120,7 @@ class CreateSale:
         total = money(sum((ln.total for ln in lines), Decimal("0")))
 
         # payments
-        accounts = await self._sales.get_accounts([p.account_id for p in req.payments])
+        accounts = await self._accounts.get_accounts([p.account_id for p in req.payments])
         payments: list[ResolvedPayment] = []
         for pay in req.payments:
             name = accounts.get(pay.account_id)

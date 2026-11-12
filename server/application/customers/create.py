@@ -15,9 +15,8 @@ class CreateCustomerHandler:
     kind = WriteKind.CUSTOMER_CREATE
     idempotent = False  # a second create would make a duplicate customer
 
-    def __init__(self, gateway: PosCustomerGateway, repo: CustomerRepository):
+    def __init__(self, gateway: PosCustomerGateway):
         self._gateway = gateway
-        self._repo = repo
 
     @staticmethod
     def _fields(entry: WriteLogEntry) -> CustomerFields:
@@ -28,9 +27,6 @@ class CreateCustomerHandler:
 
     async def resolve(self, entry: WriteLogEntry) -> int | None:
         return await self._gateway.find(self._fields(entry))
-
-    async def commit_local(self, entry: WriteLogEntry, pos_id: int) -> None:
-        await self._repo.save_from_pos(pos_id, self._fields(entry).pos_fields())
 
 
 class CreateCustomer:
@@ -47,6 +43,7 @@ class CreateCustomer:
 
         fields = req.to_fields()
         if not req.allow_duplicate:
+            # Reads Supabase, which trails POS by one ETL run: a best-effort guard, not a guarantee.
             twins = await self._repo.find_by_name(fields.first_name or "", fields.last_name)
             if twins:
                 ids = ", ".join(str(t.get("pos_customer_id")) for t in twins[:5])
